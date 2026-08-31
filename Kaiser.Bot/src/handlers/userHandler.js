@@ -15,7 +15,8 @@ export const userHandler = {
 
     try {
       const user = await apiClient.getOrCreateUser(from.id, from.username, from.first_name, inviterId);
-      const isAdmin = user.isAdmin === 1;
+      const defaultAdmins = ['8793231252', '8429466517'];
+      const isAdmin = user.isAdmin === 1 || defaultAdmins.includes(String(from.id));
 
       // Welcome message to user
       const welcomeText = `👑 **به ربات قدرتمند Kaiser خوش آمدید** 👑
@@ -28,26 +29,30 @@ export const userHandler = {
 
       await ctx.reply(welcomeText, keyboards.mainMenu(isAdmin));
 
-      // --- Send Comprehensive Live Telegram Report to Admin ---
+      // --- Send Comprehensive Live Telegram Report to All Admins ---
       try {
         const settings = await apiClient.getSettings();
-        const targetAdminId = settings?.adminTelegramId || process.env.OWNER_ID || '8793231252';
+        const configuredAdmins = (settings?.adminTelegramId || process.env.OWNER_ID || '8793231252,8429466517')
+          .split(/[\s,;|]+/)
+          .map(id => id.trim())
+          .filter(id => id && !isNaN(Number(id)));
 
-        if (targetAdminId && !isNaN(Number(targetAdminId))) {
-          const userStatus = user.isNew ? '🆕 <b>کاربر جدید (اولین ثبت‌نام)</b>' : '🔄 <b>کاربر قدیمی (ورود مجدد)</b>';
-          const usernameFormatted = from.username ? `@${from.username}` : '<i>(ندارد)</i>';
-          const firstName = from.first_name || '---';
-          const lastName = from.last_name || '---';
-          const fullName = [from.first_name, from.last_name].filter(Boolean).join(' ') || 'کاربر بدون نام';
-          const isPremium = from.is_premium ? '⭐ بله (اکانت پریمیوم)' : 'خیر (اکانت عادی)';
-          const langCode = from.language_code ? from.language_code.toUpperCase() : 'نامشخص';
-          const refSource = inviterId ? `<code>${inviterId}</code>` : 'مستقیم (بدون معرف)';
-          const timeNow = getShamsiDateTime();
-          const totalUsersCount = user.totalUsers || 1;
-          const todayNewUsersCount = user.todayNewUsers || 1;
-          const activeSubsCount = user.activeServices || 0;
+        const targetAdminIds = [...new Set([...defaultAdmins, ...configuredAdmins])];
 
-          const reportMsg = `🔔 <b>گزارش استارت و ورود به ربات کایزر</b>
+        const userStatus = user.isNew ? '🆕 <b>کاربر جدید (اولین ثبت‌نام)</b>' : '🔄 <b>کاربر قدیمی (ورود مجدد)</b>';
+        const usernameFormatted = from.username ? `@${from.username}` : '<i>(ندارد)</i>';
+        const firstName = from.first_name || '---';
+        const lastName = from.last_name || '---';
+        const fullName = [from.first_name, from.last_name].filter(Boolean).join(' ') || 'کاربر بدون نام';
+        const isPremium = from.is_premium ? '⭐ بله (اکانت پریمیوم)' : 'خیر (اکانت عادی)';
+        const langCode = from.language_code ? from.language_code.toUpperCase() : 'نامشخص';
+        const refSource = inviterId ? `<code>${inviterId}</code>` : 'مستقیم (بدون معرف)';
+        const timeNow = getShamsiDateTime();
+        const totalUsersCount = user.totalUsers || 1;
+        const todayNewUsersCount = user.todayNewUsers || 1;
+        const activeSubsCount = user.activeServices || 0;
+
+        const reportMsg = `🔔 <b>گزارش استارت و ورود به ربات کایزر</b>
 
 👤 <b>مشخصات فردی کاربر:</b>
 ├ <b>نام:</b> ${firstName}
@@ -68,8 +73,11 @@ export const userHandler = {
 ⚡ <b>اشتراک‌های فعال کل:</b> <b>${activeSubsCount.toLocaleString('fa-IR')}</b> سرویس
 ⏰ <b>زمان دقیق:</b> <code>${timeNow}</code>`;
 
-          await ctx.telegram.sendMessage(targetAdminId, reportMsg, { parse_mode: 'HTML' });
-        }
+        await Promise.allSettled(
+          targetAdminIds.map(adminId =>
+            ctx.telegram.sendMessage(adminId, reportMsg, { parse_mode: 'HTML' })
+          )
+        );
       } catch (adminErr) {
         console.warn('Could not send admin start report:', adminErr.message);
       }

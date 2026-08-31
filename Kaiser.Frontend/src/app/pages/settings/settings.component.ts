@@ -23,11 +23,11 @@ import { ApiService } from '../../services/api.service';
           <!-- Admin Telegram Numeric ID -->
           <div class="form-group" style="background: rgba(99, 102, 241, 0.1); padding: 14px; border-radius: 10px; border: 1px solid rgba(99, 102, 241, 0.3);">
             <label style="color: #a5b4fc; font-weight: 700;">
-              <i class="fa-brands fa-telegram"></i> شناسه عددی تلگرام ادمین (دریافت گزارش ورود و اعلان‌ها):
+              <i class="fa-brands fa-telegram"></i> شناسه‌های عددی تلگرام ادمین‌ها (دریافت گزارش ورود و اعلان‌ها):
             </label>
-            <input type="text" class="form-control" [(ngModel)]="settings.adminTelegramId" name="adminTelegramId" placeholder="مثال: 8793231252">
+            <input type="text" class="form-control" [(ngModel)]="settings.adminTelegramId" name="adminTelegramId" placeholder="8793231252, 8429466517">
             <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
-              وقتی کاربری ربات را استارت می‌زند یا سفارشی ثبت می‌شود، گزارش لحظه‌ای با تعداد کل کاربران و مشخصات فرد به این آیدی عددی ارسال می‌شود.
+              می‌توانید چند شناسه عددی را با کاما (,) یا فاصله وارد کنید تا گزارش ورود کاربران و سفارش‌ها برای همه ادمین‌ها ارسال شود.
             </small>
           </div>
 

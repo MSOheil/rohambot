@@ -64,7 +64,7 @@ services:
       - API_HASH=1138b0ad3caf2d93a315cf9be02293b0
       - WEBHOOK_URL=https://botrohamapi.goodino24.ir
       - BACKEND_URL=http://kaiser-backend:5000
-      - OWNER_ID=8793231252
+      - OWNER_ID=8793231252,8429466517
       - PORT=3000
       - USE_WEBHOOK=true
       - LOGS_DIR=/app/logs

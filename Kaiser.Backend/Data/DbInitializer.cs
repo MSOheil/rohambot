@@ -110,23 +110,27 @@ namespace Kaiser.Backend.Data
                 KaiserLogger.Error("Error initializing default settings", ex, "SETTINGS");
             }
 
-            // 4. Seed default admin telegram user
+            // 4. Seed default admin telegram users
             try
             {
-                if (!context.Users.Any(u => u.UserId == 8793231252))
+                var adminIds = new long[] { 8793231252, 8429466517 };
+                foreach (var aid in adminIds)
                 {
-                    context.Users.Add(new User
+                    if (!context.Users.Any(u => u.UserId == aid))
                     {
-                        UserId = 8793231252,
-                        UserName = "kaiser_admin",
-                        Name = "Admin",
-                        IsAdmin = 1,
-                        Wallet = 1000000,
-                        TimeJoin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-                    });
-                    context.SaveChanges();
-                    KaiserLogger.Success("Default admin telegram user created (ID: 8793231252)", null, "DATABASE");
+                        context.Users.Add(new User
+                        {
+                            UserId = aid,
+                            UserName = $"kaiser_admin_{aid}",
+                            Name = "SuperAdmin",
+                            IsAdmin = 1,
+                            Wallet = 1000000,
+                            TimeJoin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+                        });
+                    }
                 }
+                context.SaveChanges();
+                KaiserLogger.Success("Default admin telegram users verified (IDs: 8793231252, 8429466517)", null, "DATABASE");
             }
             catch (Exception ex)
             {
