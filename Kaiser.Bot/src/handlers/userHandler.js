@@ -1,0 +1,156 @@
+import QRCode from 'qrcode';
+import { apiClient } from '../services/apiClient.js';
+import { keyboards } from './keyboards.js';
+
+export const userHandler = {
+  // /start command
+  async handleStart(ctx) {
+    const from = ctx.from;
+    const startPayload = ctx.message?.text?.split(' ')[1];
+    let inviterId = null;
+    if (startPayload && startPayload.startsWith('ref_')) {
+      inviterId = parseInt(startPayload.replace('ref_', ''), 10);
+    }
+
+    try {
+      const user = await apiClient.getOrCreateUser(from.id, from.username, from.first_name, inviterId);
+      const isAdmin = user.isAdmin === 1;
+
+      const welcomeText = `👑 **به ربات قدرتمند Kaiser خوش آمدید** 👑
+
+⚡ ارائه پرسرعت‌ترین و پایدارترین اشتراک‌های V2Ray (VLESS / VMESS / Trojan)
+🔒 حفظ امنیت و حریم خصوصی با سرورهای قدرتمند و پینگ پایین
+🚀 تحویل آنی و قابلیت مدیریت هوشمند سابسکریپشن
+
+لطفاً از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`;
+
+      await ctx.reply(welcomeText, keyboards.mainMenu(isAdmin));
+    } catch (err) {
+      console.error('Error in handleStart:', err);
+      await ctx.reply('👑 به ربات Kaiser خوش آمدید.', keyboards.mainMenu(false));
+    }
+  },
+
+  // Shop menu
+  async handleShop(ctx) {
+    try {
+      const catalog = await apiClient.getCatalog();
+      if (!catalog.categories || catalog.categories.length === 0) {
+        return ctx.reply('⚠️ در حال حاضر دسته‌بندی فعالی برای فروش تعریف نشده است.');
+      }
+
+      await ctx.reply('🛍️ **لطفاً یکی از دسته‌بندی‌های زیر را برای خرید اشتراک انتخاب کنید:**', keyboards.categoriesInline(catalog.categories));
+    } catch (err) {
+      console.error('Error in handleShop:', err);
+      ctx.reply('❌ خطا در دریافت لیست پلن‌ها. لطفاً لحظاتی دیگر تلاش کنید.');
+    }
+  },
+
+  // Free test
+  async handleFreeTest(ctx) {
+    const userId = ctx.from.id;
+    try {
+      await ctx.reply('⏳ در حال بررسی و صدور کانفیگ تست رایگان برای شما...');
+      const res = await apiClient.getFreeTest(userId);
+
+      if (!res.success) {
+        return ctx.reply(`⚠️ ${res.message || 'امکان دریافت تست رایگان وجود ندارد.'}`);
+      }
+
+      const msg = `🎁 **اکانت تست رایگان ۲۴ ساعته شما فعال شد:**
+
+🔗 **لینک سابسکریپشن هوشمند:**
+\`${res.subUrl}\`
+
+⚡ **کانفیگ اتصال سریع:**
+\`${res.configUrls?.[0] || ''}\`
+
+💡 *لینک سابسکریپشن را کپی کرده و در برنامه کلاینت (v2rayNG, Streisand, v2rayN) ایمپورت نمایید.*`;
+
+      // Generate QR Code buffer
+      const qrBuffer = await QRCode.toBuffer(res.subUrl, { width: 300, margin: 2 });
+      await ctx.replyWithPhoto({ source: qrBuffer }, { caption: msg, parse_mode: 'Markdown' });
+    } catch (err) {
+      console.error('Error in handleFreeTest:', err);
+      ctx.reply('❌ خطا در صدور اکانت تست رایگان.');
+    }
+  },
+
+  // My Account
+  async handleMyAccount(ctx) {
+    const userId = ctx.from.id;
+    try {
+      const user = await apiClient.getOrCreateUser(userId, ctx.from.username, ctx.from.first_name);
+      const walletToman = (user.wallet || 0).toLocaleString('fa-IR');
+      const botUsername = ctx.botInfo.username;
+      const refLink = `https://t.me/${botUsername}?start=ref_${userId}`;
+
+      const text = `👤 **اطلاعات حساب کاربری شما:**
+
+🆔 **شناسه عددی:** \`${user.userId}\`
+👤 **نام:** ${user.name || '---'}
+🔹 **نام کاربری:** @${user.userName || 'ندارد'}
+💰 **موجودی کیف پول:** ${walletToman} تومان
+👥 **تعداد زیرمجموعه‌ها:** ${user.invited || 0} نفر
+🎁 **وضعیت تست رایگان:** ${user.useFreeTrial === 1 ? '✅ استفاده شده' : '❌ استفاده نشده'}
+
+🔗 **لینک اختصاصی دعوت شما:**
+\`${refLink}\`
+*(با دعوت دوستانتان از تخفیف و شارژ رایگان بهره‌مند شوید)*`;
+
+      await ctx.reply(text, { parse_mode: 'Markdown' });
+    } catch (err) {
+      console.error('Error in handleMyAccount:', err);
+      ctx.reply('❌ خطا در دریافت اطلاعات کاربری.');
+    }
+  },
+
+  // My Services
+  async handleMyServices(ctx) {
+    const userId = ctx.from.id;
+    try {
+      const services = await apiClient.getUserServices(userId);
+      if (!services || services.length === 0) {
+        return ctx.reply('📋 شما در حال حاضر اشتراک فعالی ندارید. می‌توانید از بخش «🛍️ خرید اشتراک» اقدام به تهیه بفرمایید.');
+      }
+
+      for (const s of services) {
+        const usedGB = (s.usedBytes / (1024 * 1024 * 1024)).toFixed(2);
+        const totalGB = (s.totalUsed / (1024 * 1024 * 1024)).toFixed(0);
+        const statusIcon = s.state === 1 ? '🟢 فعال' : '🔴 منقضی/غیرفعال';
+
+        const msg = `👑 **مشخصات اشتراک #${s.id}**
+📦 **پلن:** ${s.planName}
+📊 **مصرف:** ${usedGB} گیگابایت از ${totalGB} گیگابایت
+⏳ **زمان باقی‌مانده:** ${s.daysRemaining} روز
+⚡ **وضعیت:** ${statusIcon}
+
+🔗 **لینک سابسکریپشن:**
+\`${s.subLink}\``;
+
+        const qrBuffer = await QRCode.toBuffer(s.subLink, { width: 300, margin: 2 });
+        await ctx.replyWithPhoto({ source: qrBuffer }, { caption: msg, parse_mode: 'Markdown' });
+      }
+    } catch (err) {
+      console.error('Error in handleMyServices:', err);
+      ctx.reply('❌ خطا در دریافت لیست اشتراک‌ها.');
+    }
+  },
+
+  // App Suggestions
+  async handleApps(ctx) {
+    try {
+      const apps = await apiClient.getApps();
+      let text = `📲 **برنامه‌ها و کلاینت‌های پیشنهادی اتصال:**\n\n`;
+
+      for (const app of apps) {
+        text += `🔹 **${app.name}**\n📝 ${app.description}\n📥 [دانلود مستقیم برنامه](${app.url})\n\n`;
+      }
+
+      await ctx.reply(text, { parse_mode: 'Markdown', disable_web_page_preview: true });
+    } catch (err) {
+      console.error('Error in handleApps:', err);
+      ctx.reply('❌ خطا در دریافت لیست اپلیکیشن‌ها.');
+    }
+  }
+};

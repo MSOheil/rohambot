@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>👑 جزئیات و وضعیت اشتراک | Kaiser VIP Subscription</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 28, 45, 0.85);
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --radius-lg: 20px;
+            --radius-md: 14px;
+            --radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Vazirmatn', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+            color: var(--text-main);
+        }
+
+        .subscription-card {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 28px 24px;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subscription-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .crown-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #fff;
+            margin-bottom: 12px;
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .card-header p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Usage Section */
+        .usage-container {
+            background: rgba(15, 20, 34, 0.7);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .usage-percent {
+            font-size: 38px;
+            font-weight: 900;
+            background: linear-gradient(to left, #6366f1, #06b6d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #6366f1, #06b6d4);
+            transition: width 1s ease-in-out;
+        }
+
+        .usage-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .detail-box {
+            background: rgba(0, 0, 0, 0.25);
+            padding: 10px 6px;
+            border-radius: var(--radius-sm);
+        }
+        .detail-box span {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .detail-box strong {
+            font-size: 14px;
+            color: #fff;
+            margin-top: 2px;
+            display: block;
+        }
+
+        /* Info List */
+        .info-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: rgba(15, 20, 34, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: var(--radius-md);
+            font-size: 13px;
+        }
+
+        .info-row span {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-row strong {
+            color: #fff;
+        }
+
+        .badge-status {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-copy {
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            color: #fff;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            margin-bottom: 10px;
+        }
+        .btn-copy:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        .btn-qr {
+            background: rgba(255, 255, 255, 0.07);
+            color: #fff;
+            border: 1px solid var(--border-color);
+        }
+        .btn-qr:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* QR Modal */
+        #qr-section {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff;
+            border-radius: var(--radius-md);
+            text-align: center;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .footer-note a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="subscription-card">
+    <div class="card-header">
+        <div class="crown-icon">
+            <i class="fa-solid fa-crown"></i>
+        </div>
+        <h2>{{ name }}</h2>
+        <p>اشتراک پرسرعت و پایدار اختصاصی</p>
+    </div>
+
+    <!-- Usage Meter -->
+    <div class="usage-container">
+        <div class="usage-percent" id="usage-text">{{ "%.0f"|format(usage) }}%</div>
+        <div class="progress-track">
+            <div class="progress-fill" style="width: {{ usage }}%;"></div>
+        </div>
+        <div class="usage-details">
+            <div class="detail-box">
+                <span>مصرف شده</span>
+                <strong>{{ usageGB }} GB</strong>
+            </div>
+            <div class="detail-box">
+                <span>باقی‌مانده</span>
+                <strong style="color: #10b981;">{{ rest }} GB</strong>
+            </div>
+            <div class="detail-box">
+                <span>حجم کل بسته</span>
+                <strong>{{ TotalUsage }} GB</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info List -->
+    <div class="info-list">
+        <div class="info-row">
+            <span><i class="fa-solid fa-signal" style="color: var(--accent);"></i> وضعیت سرویس</span>
+            <span class="badge-status">{{ state }}</span>
+        </div>
+        <div class="info-row">
+            <span><i class="fa-regular fa-calendar-check" style="color: #f59e0b;"></i> تاریخ انقضا</span>
+            <strong>{{ date }}</strong>
+        </div>
+        <div class="info-row">
+            <span><i class="fa-solid fa-shield-halved" style="color: var(--primary);"></i> پروتکل امنیتی</span>
+            <strong>Vless / Reality / WS (TLS)</strong>
+        </div>
+    </div>
+
+    <!-- Config Raw Storage -->
+    <input type="hidden" id="config-content" value="{{ result }}">
+
+    <!-- Buttons -->
+    <button class="btn-action btn-copy" onclick="copyServiceConfig(this)">
+        <i class="fa-regular fa-copy"></i> کپی لینک و کانفیگ‌ها
+    </button>
+    <button class="btn-action btn-qr" onclick="toggleQrCode()">
+        <i class="fa-solid fa-qrcode"></i> نمایش بارکد QR اتصال سریع
+    </button>
+
+    <div id="qr-section">
+        <div id="qrcode" style="display: flex; justify-content: center;"></div>
+        <p style="color: #333; font-size: 11px; margin-top: 10px;">بارکد بالا را با نرم‌افزار V2Ray اسکن کنید</p>
+    </div>
+
+    <div class="footer-note">
+        قدرت‌گرفته از ربات پیشرفته <a href="#">👑 Kaiser VPN</a>
+    </div>
+</div>
+
+<script>
+    function copyServiceConfig(btn) {
+        const text = document.getElementById('config-content').value;
+        const currentUrl = window.location.href;
+        navigator.clipboard.writeText(text || currentUrl);
+        
+        const original = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> با موفقیت کپی شد!';
+        btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.style.background = '';
+        }, 1500);
+    }
+
+    let qrCreated = false;
+    function toggleQrCode() {
+        const section = document.getElementById('qr-section');
+        if (section.style.display === 'block') {
+            section.style.display = 'none';
+        } else {
+            section.style.display = 'block';
+            if (!qrCreated) {
+                const qrUrl = window.location.href;
+                new QRCode(document.getElementById("qrcode"), {
+                    text: qrUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                qrCreated = true;
+            }
+        }
+    }
+</script>
+
+</body>
+</html>

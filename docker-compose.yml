@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kaiser-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: kaiser_db
+      POSTGRES_USER: kaiser_user
+      POSTGRES_PASSWORD: kjhgfdsaMn01@
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kaiser_user -d kaiser_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kaiser-net
+
+  kaiser-backend:
+    build:
+      context: ./Kaiser.Backend
+      dockerfile: Dockerfile
+    container_name: kaiser-backend
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000
+      - USE_POSTGRES=true
+      - POSTGRES_CONNECTION=Host=postgres;Port=5432;Database=kaiser_db;Username=kaiser_user;Password=kjhgfdsaMn01@;Include Error Detail=true
+      - KaiserConfig__BotToken=8528982981:AAEHHIKKqqF7mPzhAt9AxS7rph5rhd4qrPE
+      - KaiserConfig__ApiId=36814355
+      - KaiserConfig__ApiHash=1138b0ad3caf2d93a315cf9be02293b0
+      - KaiserConfig__WebhookUrl=https://botrohamapi.goodino24.ir
+      - KaiserConfig__PanelUrl=https://botroham.goodino24.ir
+      - KaiserConfig__OwnerId=123456789
+    volumes:
+      - ./Kaiser.Backend/db:/app/db
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - kaiser-net
+
+  kaiser-frontend:
+    build:
+      context: ./Kaiser.Frontend
+      dockerfile: Dockerfile
+    container_name: kaiser-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - kaiser-net
+
+  kaiser-bot:
+    build:
+      context: ./Kaiser.Bot
+      dockerfile: Dockerfile
+    container_name: kaiser-bot
+    restart: always
+    environment:
+      - BOT_TOKEN=8528982981:AAEHHIKKqqF7mPzhAt9AxS7rph5rhd4qrPE
+      - API_ID=36814355
+      - API_HASH=1138b0ad3caf2d93a315cf9be02293b0
+      - WEBHOOK_URL=https://botrohamapi.goodino24.ir
+      - BACKEND_URL=http://kaiser-backend:5000
+      - OWNER_ID=123456789
+      - PORT=3000
+      - USE_WEBHOOK=true
+    depends_on:
+      - kaiser-backend
+    ports:
+      - "3000:3000"
+    networks:
+      - kaiser-net
+
+  kaiser-nginx:
+    image: nginx:alpine
+    container_name: kaiser-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    depends_on:
+      - kaiser-backend
+      - kaiser-frontend
+      - kaiser-bot
+    networks:
+      - kaiser-net
+
+volumes:
+  pg_data:
+    driver: local
+  certbot_www:
+    driver: local
+
+networks:
+  kaiser-net:
+    driver: bridge

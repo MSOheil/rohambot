@@ -1,0 +1,125 @@
+<div class="app-container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-header">
+      <div class="brand-logo">👑</div>
+      <div>
+        <div class="brand-title">KAISER PANEL</div>
+        <div class="brand-sub">مدیریت هوشمند سابسکریپشن و فروش</div>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="active">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>داشبورد و آمار</span>
+      </a>
+
+      <a class="nav-item" routerLink="/servers" routerLinkActive="active">
+        <i class="fa-solid fa-server"></i>
+        <span>نودهای سرور</span>
+      </a>
+
+      <a class="nav-item" routerLink="/plans" routerLinkActive="active">
+        <i class="fa-solid fa-tags"></i>
+        <span>تعرفه‌ها و پلن‌ها</span>
+      </a>
+
+      <a class="nav-item" routerLink="/services" routerLinkActive="active">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>اشتراک‌های کاربران</span>
+      </a>
+
+      <a class="nav-item" routerLink="/users" routerLinkActive="active">
+        <i class="fa-solid fa-users"></i>
+        <span>مدیریت کاربران</span>
+      </a>
+
+      <a class="nav-item" routerLink="/orders" routerLinkActive="active">
+        <i class="fa-solid fa-receipt"></i>
+        <span>سفارشات و تراکنش‌ها</span>
+      </a>
+
+      <a class="nav-item" routerLink="/settings" routerLinkActive="active">
+        <i class="fa-solid fa-gears"></i>
+        <span>تنظیمات ربات و درگاه</span>
+      </a>
+
+      <a class="nav-item" routerLink="/sub-preview" routerLinkActive="active">
+        <i class="fa-solid fa-qrcode"></i>
+        <span>پیش‌نمایش ساب مشتری</span>
+      </a>
+    </nav>
+
+    <div style="padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 11px; color: var(--text-muted); text-align: center;">
+      نسخه ۲.۰.۰ | Kaiser VPN Bot
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Navbar -->
+    <header class="top-navbar">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span class="badge badge-success">
+          <i class="fa-solid fa-circle" style="font-size: 8px;"></i> سیستم فعال و متصل
+        </span>
+        <span class="badge badge-info" *ngIf="auth.isLoggedIn()">
+          <i class="fa-solid fa-crown" style="font-size: 10px;"></i> سوپر ادمین ({{ auth.currentUserValue?.username }})
+        </span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div *ngIf="auth.isLoggedIn()" style="display: flex; align-items: center; gap: 10px;">
+          <div style="font-size: 12.5px; color: var(--text-muted);">
+            <span>مدیر کل: </span>
+            <strong style="color: #fff;">{{ auth.currentUserValue?.username }}</strong>
+          </div>
+          <button class="k-btn k-btn-outline" style="padding: 4px 10px; font-size: 11px;" (click)="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> خروج
+          </button>
+        </div>
+
+        <button *ngIf="!auth.isLoggedIn()" class="k-btn k-btn-primary" style="padding: 6px 14px; font-size: 12px;" (click)="showLoginModal = true">
+          <i class="fa-solid fa-right-to-bracket"></i> ورود به پنل
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Content Routing -->
+    <main>
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Super Admin Login Modal -->
+<div class="modal-overlay" *ngIf="showLoginModal">
+  <div class="modal-content" style="max-width: 420px; border: 1px solid rgba(99, 102, 241, 0.4); box-shadow: 0 0 40px rgba(99, 102, 241, 0.25);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="font-size: 38px; margin-bottom: 8px;">👑</div>
+      <h2 style="font-size: 18px; font-weight: 800;">ورود به پنل مدیریت کایزر</h2>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">لطفاً نام کاربری و رمز عبور سوپر ادمین را وارد نمایید</p>
+    </div>
+
+    <div *ngIf="loginError" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 16px;">
+      <i class="fa-solid fa-triangle-exclamation"></i> {{ loginError }}
+    </div>
+
+    <form (ngSubmit)="submitLogin()">
+      <div class="form-group">
+        <label>نام کاربری سوپر ادمین:</label>
+        <input type="text" class="form-control" [(ngModel)]="loginUsername" name="username" required placeholder="admin">
+      </div>
+
+      <div class="form-group">
+        <label>کلمه عبور سوپر ادمین:</label>
+        <input type="password" class="form-control" [(ngModel)]="loginPassword" name="password" required placeholder="رمز عبور را وارد کنید">
+      </div>
+
+      <button type="submit" class="k-btn k-btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 16px; font-size: 14px;">
+        <i class="fa-solid fa-lock-open"></i> ورود امن به سیستم
+      </button>
+    </form>
+  </div>
+</div>
