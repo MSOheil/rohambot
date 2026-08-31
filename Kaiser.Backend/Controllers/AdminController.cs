@@ -50,25 +50,66 @@ namespace Kaiser.Backend.Controllers
                                     Token = s.Token ?? ""
                                 }).ToListAsync();
 
-            // Mock 7-day sales
-            var salesChart = new List<DailySalesDTO>
-            {
-                new() { Date = "شنبه", Amount = 120000 },
-                new() { Date = "یکشنبه", Amount = 240000 },
-                new() { Date = "دوشنبه", Amount = 190000 },
-                new() { Date = "سه‌شنبه", Amount = 350000 },
-                new() { Date = "چهارشنبه", Amount = 280000 },
-                new() { Date = "پنجشنبه", Amount = 420000 },
-                new() { Date = "جمعه", Amount = 560000 }
-            };
+            // Real 7-day sales from database
+            var salesChart = new List<DailySalesDTO>();
+            var pc = new System.Globalization.PersianCalendar();
+            var nowUtc = DateTime.UtcNow;
 
-            var trafficChart = new List<ServerTrafficDTO>
+            for (int i = 6; i >= 0; i--)
             {
-                new() { ServerName = "آلمان (Hetzner)", TrafficBytes = 55, Percentage = 55 },
-                new() { ServerName = "فنلاند (Gaming)", TrafficBytes = 20, Percentage = 20 },
-                new() { ServerName = "هلند (Trade)", TrafficBytes = 15, Percentage = 15 },
-                new() { ServerName = "فرانسه (OVH)", TrafficBytes = 10, Percentage = 10 }
-            };
+                var dayDate = nowUtc.Date.AddDays(-i);
+                var nextDayDate = dayDate.AddDays(1);
+                long startUnix = ((DateTimeOffset)dayDate).ToUnixTimeSeconds();
+                long endUnix = ((DateTimeOffset)nextDayDate).ToUnixTimeSeconds();
+
+                var dayTotal = await _db.Orders
+                    .Where(o => o.State == 1 && o.DateTime >= startUnix && o.DateTime < endUnix)
+                    .SumAsync(o => (long?)(o.PriceAfterDiscount > 0 ? o.PriceAfterDiscount : o.Price)) ?? 0;
+
+                string dayName = dayDate.DayOfWeek switch
+                {
+                    DayOfWeek.Saturday => "شنبه",
+                    DayOfWeek.Sunday => "یکشنبه",
+                    DayOfWeek.Monday => "دوشنبه",
+                    DayOfWeek.Tuesday => "سه‌شنبه",
+                    DayOfWeek.Wednesday => "چهارشنبه",
+                    DayOfWeek.Thursday => "پنجشنبه",
+                    DayOfWeek.Friday => "جمعه",
+                    _ => ""
+                };
+                var shamsiDate = $"{pc.GetMonth(dayDate):00}/{pc.GetDayOfMonth(dayDate):00}";
+
+                salesChart.Add(new DailySalesDTO
+                {
+                    Date = $"{dayName} ({shamsiDate})",
+                    Amount = dayTotal
+                });
+            }
+
+            // Real Server Traffic Distribution from database
+            var servers = await _db.Servers.Where(s => s.State == 1).ToListAsync();
+            var trafficChart = new List<ServerTrafficDTO>();
+            var allServices = await _db.Services.Where(s => s.isDelete == 0).ToListAsync();
+            long totalTrafficAllServers = allServices.Sum(s => s.Upload + s.Download);
+
+            foreach (var server in servers)
+            {
+                var serverIdStr = server.Id.ToString();
+                var serverCatIds = await _db.ServerCats.Where(sc => sc.ServerId == server.Id).Select(sc => sc.CatId).ToListAsync();
+
+                long serverTraffic = allServices
+                    .Where(s => (s.ServerIds != null && s.ServerIds.Contains(serverIdStr)) || serverCatIds.Contains(s.CatId) || s.CatId == server.CatId)
+                    .Sum(s => s.Upload + s.Download);
+
+                int percentage = totalTrafficAllServers > 0 ? (int)((serverTraffic * 100) / totalTrafficAllServers) : 0;
+
+                trafficChart.Add(new ServerTrafficDTO
+                {
+                    ServerName = server.Name ?? $"سرور #{server.Id}",
+                    TrafficBytes = serverTraffic,
+                    Percentage = percentage
+                });
+            }
 
             return Ok(new DashboardStatsDTO
             {

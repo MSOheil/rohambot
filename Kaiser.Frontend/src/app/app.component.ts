@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from './services/auth.service';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -15,19 +16,42 @@ export class AppComponent implements OnInit {
   loginUsername = 'admin';
   loginPassword = '';
   loginError = '';
+  rememberMe = true;
   showLoginModal = false;
+  mobileSidebarOpen = false;
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private router: Router) {}
 
   ngOnInit() {
+    this.loginUsername = this.auth.getSavedUsername();
+
     if (!this.auth.isLoggedIn()) {
       this.showLoginModal = true;
     }
+
+    // Auto close mobile drawer on route change
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.mobileSidebarOpen = false;
+    });
+  }
+
+  toggleMobileSidebar() {
+    this.mobileSidebarOpen = !this.mobileSidebarOpen;
+  }
+
+  closeMobileSidebar() {
+    this.mobileSidebarOpen = false;
   }
 
   submitLogin() {
     this.loginError = '';
-    this.auth.login({ username: this.loginUsername, password: this.loginPassword }).subscribe({
+    this.auth.login({
+      username: this.loginUsername,
+      password: this.loginPassword,
+      rememberMe: this.rememberMe
+    }).subscribe({
       next: (res) => {
         if (res.success) {
           this.showLoginModal = false;
@@ -44,6 +68,9 @@ export class AppComponent implements OnInit {
 
   logout() {
     this.auth.logout();
+    this.loginUsername = this.auth.getSavedUsername();
+    this.loginPassword = '';
     this.showLoginModal = true;
+    this.mobileSidebarOpen = false;
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../../services/api.service';
 import Chart from 'chart.js/auto';
@@ -44,19 +44,20 @@ import Chart from 'chart.js/auto';
           <i class="fa-solid fa-sack-dollar"></i>
         </div>
         <div>
-          <div class="stat-lbl">مجموع درآمد حاصله</div>
+          <div class="stat-lbl">مجموع درآمد تایید شده</div>
           <div class="stat-val">{{ stats.totalRevenue || 0 | number }} <span style="font-size: 12px; color: #94a3b8;">تومان</span></div>
         </div>
       </div>
     </div>
 
     <!-- Charts -->
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 24px;">
+    <div class="charts-grid" style="margin-top: 24px;">
       <div class="k-card">
         <div class="k-card-header">
           <span style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-chart-line" style="color: #6366f1;"></i> نمودار فروش و درآمد هفتگی
+            <i class="fa-solid fa-chart-line" style="color: #6366f1;"></i> نمودار فروش واقعی ۷ روز اخیر
           </span>
+          <span class="badge badge-info">{{ stats.totalOrders || 0 }} سفارش ثبت شده</span>
         </div>
         <div style="height: 260px; position: relative;">
           <canvas #salesCanvas></canvas>
@@ -66,7 +67,7 @@ import Chart from 'chart.js/auto';
       <div class="k-card">
         <div class="k-card-header">
           <span style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <i class="fa-solid fa-chart-pie" style="color: #06b6d4;"></i> توزیع ترافیک سرورها
+            <i class="fa-solid fa-chart-pie" style="color: #06b6d4;"></i> توزیع ترافیک واقعی سرورها
           </span>
         </div>
         <div style="height: 260px; position: relative;">
@@ -79,7 +80,7 @@ import Chart from 'chart.js/auto';
     <div class="k-card" style="margin-top: 24px;">
       <div class="k-card-header">
         <span style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-list-check" style="color: #10b981;"></i> آخرین اشتراک‌های صادر شده
+          <i class="fa-solid fa-list-check" style="color: #10b981;"></i> آخرین اشتراک‌های صادر شده واقعی
         </span>
       </div>
       <div class="table-container">
@@ -101,7 +102,7 @@ import Chart from 'chart.js/auto';
               <td>{{ item.planName }}</td>
               <td>
                 <span style="color: #6366f1;">{{ (item.totalUsed / 1073741824).toFixed(1) }} GB</span>
-                / {{ (item.totalLimit / 1073741824).toFixed(0) }} GB
+                / {{ item.totalLimit > 0 ? (item.totalLimit / 1073741824).toFixed(0) + ' GB' : 'نامحدود' }}
               </td>
               <td>
                 <span class="badge" [ngClass]="item.state === 1 ? 'badge-success' : 'badge-danger'">
@@ -110,13 +111,19 @@ import Chart from 'chart.js/auto';
               </td>
               <td><code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">{{ item.token }}</code></td>
             </tr>
+            <tr *ngIf="!stats.recentServices || stats.recentServices.length === 0">
+              <td colspan="6" style="text-align: center; padding: 28px; color: var(--text-muted);">
+                <i class="fa-solid fa-inbox" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+                هنوز هیچ اشتراکی صادر نشده است.
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </div>
   `
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('salesCanvas') salesCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('trafficCanvas') trafficCanvas!: ElementRef<HTMLCanvasElement>;
 
@@ -126,8 +133,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     totalServers: 0,
     onlineServers: 0,
     totalRevenue: 0,
-    recentServices: []
+    totalOrders: 0,
+    recentServices: [],
+    salesChart: [],
+    trafficChart: []
   };
+
+  private salesChartInstance: Chart | null = null;
+  private trafficChartInstance: Chart | null = null;
 
   constructor(private api: ApiService) {}
 
@@ -136,56 +149,103 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    this.renderCharts();
+    if (this.stats.salesChart?.length) {
+      this.renderCharts();
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.salesChartInstance) this.salesChartInstance.destroy();
+    if (this.trafficChartInstance) this.trafficChartInstance.destroy();
   }
 
   loadStats() {
     this.api.getDashboard().subscribe({
       next: (res) => {
         this.stats = res;
-        this.renderCharts();
+        setTimeout(() => this.renderCharts(), 50);
       },
-      error: (err) => console.error(err)
+      error: (err) => console.error('Dashboard load error:', err)
     });
   }
 
   renderCharts() {
-    if (!this.salesCanvas || !this.trafficCanvas) return;
+    if (!this.salesCanvas?.nativeElement || !this.trafficCanvas?.nativeElement) return;
 
-    // Sales Chart
-    new Chart(this.salesCanvas.nativeElement, {
+    // 1. Render Sales Line Chart with REAL DB Data
+    if (this.salesChartInstance) {
+      this.salesChartInstance.destroy();
+    }
+
+    const salesLabels = this.stats.salesChart?.length
+      ? this.stats.salesChart.map((s: any) => s.date)
+      : ['روز ۱', 'روز ۲', 'روز ۳', 'روز ۴', 'روز ۵', 'روز ۶', 'امروز'];
+
+    const salesValues = this.stats.salesChart?.length
+      ? this.stats.salesChart.map((s: any) => s.amount)
+      : [0, 0, 0, 0, 0, 0, 0];
+
+    this.salesChartInstance = new Chart(this.salesCanvas.nativeElement, {
       type: 'line',
       data: {
-        labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه'],
+        labels: salesLabels,
         datasets: [{
           label: 'فروش روزانه (تومان)',
-          data: [120000, 240000, 190000, 350000, 280000, 420000, 560000],
+          data: salesValues,
           borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.12)',
+          backgroundColor: 'rgba(99, 102, 241, 0.15)',
           borderWidth: 3,
           fill: true,
-          tension: 0.4
+          tension: 0.35,
+          pointBackgroundColor: '#6366f1',
+          pointRadius: 4
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            rtl: true,
+            callbacks: {
+              label: (context) => ` فروش: ${(context.raw as number || 0).toLocaleString('fa-IR')} تومان`
+            }
+          }
+        },
         scales: {
-          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+          x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { family: 'Vazirmatn' } } },
+          y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { family: 'Vazirmatn' } } }
         }
       }
     });
 
-    // Traffic Chart
-    new Chart(this.trafficCanvas.nativeElement, {
+    // 2. Render Traffic Doughnut Chart with REAL Server Data
+    if (this.trafficChartInstance) {
+      this.trafficChartInstance.destroy();
+    }
+
+    const trafficLabels: string[] = [];
+    const trafficValues: number[] = [];
+    const colors = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+
+    if (this.stats.trafficChart && this.stats.trafficChart.length > 0) {
+      this.stats.trafficChart.forEach((t: any) => {
+        trafficLabels.push(t.serverName);
+        trafficValues.push(t.trafficBytes > 0 ? t.trafficBytes : 1);
+      });
+    } else {
+      trafficLabels.push('بدون سرور فعال');
+      trafficValues.push(1);
+    }
+
+    this.trafficChartInstance = new Chart(this.trafficCanvas.nativeElement, {
       type: 'doughnut',
       data: {
-        labels: ['آلمان (Hetzner)', 'فنلاند (Gaming)', 'هلند (Trade)', 'فرانسه (OVH)'],
+        labels: trafficLabels,
         datasets: [{
-          data: [55, 20, 15, 10],
-          backgroundColor: ['#6366f1', '#06b6d4', '#f59e0b', '#10b981'],
+          data: trafficValues,
+          backgroundColor: colors.slice(0, trafficLabels.length),
           borderWidth: 0
         }]
       },
@@ -195,10 +255,21 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { color: '#94a3b8' }
+            labels: { color: '#94a3b8', font: { family: 'Vazirmatn', size: 11 } }
+          },
+          tooltip: {
+            rtl: true,
+            callbacks: {
+              label: (context) => {
+                const label = context.label || '';
+                const val = context.raw as number;
+                const gb = (val / 1073741824).toFixed(2);
+                return ` ${label}: ${gb} GB`;
+              }
+            }
           }
         },
-        cutout: '70%'
+        cutout: '72%'
       }
     });
   }

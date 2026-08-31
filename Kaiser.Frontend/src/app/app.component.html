@@ -1,58 +1,65 @@
 <div class="app-container">
-  <!-- Sidebar -->
-  <aside class="sidebar">
+  <!-- Mobile Sidebar Backdrop -->
+  <div class="sidebar-backdrop" *ngIf="mobileSidebarOpen" (click)="closeMobileSidebar()"></div>
+
+  <!-- Sidebar Navigation Drawer -->
+  <aside class="sidebar" [class.mobile-open]="mobileSidebarOpen">
     <div class="brand-header">
       <div class="brand-logo">👑</div>
-      <div>
+      <div style="flex: 1;">
         <div class="brand-title">KAISER PANEL</div>
         <div class="brand-sub">مدیریت هوشمند سابسکریپشن و فروش</div>
       </div>
+      <!-- Close button on mobile -->
+      <button class="mobile-close-btn" (click)="closeMobileSidebar()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
 
     <nav class="nav-menu">
-      <a class="nav-item" routerLink="/dashboard" routerLinkActive="active">
+      <a class="nav-item" routerLink="/dashboard" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-chart-pie"></i>
         <span>داشبورد و آمار</span>
       </a>
 
-      <a class="nav-item" routerLink="/servers" routerLinkActive="active">
+      <a class="nav-item" routerLink="/servers" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-server"></i>
         <span>نودهای سرور</span>
       </a>
 
-      <a class="nav-item" routerLink="/plans" routerLinkActive="active">
+      <a class="nav-item" routerLink="/plans" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-tags"></i>
         <span>تعرفه‌ها و پلن‌ها</span>
       </a>
 
-      <a class="nav-item" routerLink="/services" routerLinkActive="active">
+      <a class="nav-item" routerLink="/services" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-shield-halved"></i>
         <span>اشتراک‌های کاربران</span>
       </a>
 
-      <a class="nav-item" routerLink="/users" routerLinkActive="active">
+      <a class="nav-item" routerLink="/users" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-users"></i>
         <span>مدیریت کاربران</span>
       </a>
 
-      <a class="nav-item" routerLink="/orders" routerLinkActive="active">
+      <a class="nav-item" routerLink="/orders" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-receipt"></i>
         <span>سفارشات و تراکنش‌ها</span>
       </a>
 
-      <a class="nav-item" routerLink="/settings" routerLinkActive="active">
+      <a class="nav-item" routerLink="/settings" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-gears"></i>
         <span>تنظیمات ربات و درگاه</span>
       </a>
 
-      <a class="nav-item" routerLink="/sub-preview" routerLinkActive="active">
+      <a class="nav-item" routerLink="/sub-preview" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-qrcode"></i>
         <span>پیش‌نمایش ساب مشتری</span>
       </a>
     </nav>
 
     <div style="padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 11px; color: var(--text-muted); text-align: center;">
-      نسخه ۲.۰.۰ | Kaiser VPN Bot
+      نسخه ۲.۰.۰ | Kaiser Management Panel
     </div>
   </aside>
 
@@ -60,22 +67,23 @@
   <div class="main-wrapper">
     <!-- Top Navbar -->
     <header class="top-navbar">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span class="badge badge-success">
-          <i class="fa-solid fa-circle" style="font-size: 8px;"></i> سیستم فعال و متصل
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <!-- Mobile Menu Toggle Button -->
+        <button class="mobile-toggle-btn" (click)="toggleMobileSidebar()" aria-label="Toggle Navigation">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <span class="badge badge-success status-badge">
+          <i class="fa-solid fa-circle" style="font-size: 7px;"></i> آنلاین
         </span>
-        <span class="badge badge-info" *ngIf="auth.isLoggedIn()">
-          <i class="fa-solid fa-crown" style="font-size: 10px;"></i> سوپر ادمین ({{ auth.currentUserValue?.username }})
+        <span class="badge badge-info admin-badge" *ngIf="auth.isLoggedIn()">
+          <i class="fa-solid fa-crown" style="font-size: 10px;"></i> {{ auth.currentUserValue?.username }}
         </span>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
         <div *ngIf="auth.isLoggedIn()" style="display: flex; align-items: center; gap: 10px;">
-          <div style="font-size: 12.5px; color: var(--text-muted);">
-            <span>مدیر کل: </span>
-            <strong style="color: #fff;">{{ auth.currentUserValue?.username }}</strong>
-          </div>
-          <button class="k-btn k-btn-outline" style="padding: 4px 10px; font-size: 11px;" (click)="logout()">
+          <button class="k-btn k-btn-danger" style="padding: 6px 12px; font-size: 12px;" (click)="logout()">
             <i class="fa-solid fa-right-from-bracket"></i> خروج
           </button>
         </div>
@@ -99,7 +107,7 @@
     <div style="text-align: center; margin-bottom: 24px;">
       <div style="font-size: 38px; margin-bottom: 8px;">👑</div>
       <h2 style="font-size: 18px; font-weight: 800;">ورود به پنل مدیریت کایزر</h2>
-      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">لطفاً نام کاربری و رمز عبور سوپر ادمین را وارد نمایید</p>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">لطفاً مشخصات سوپر ادمین را وارد نمایید</p>
     </div>
 
     <div *ngIf="loginError" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-bottom: 16px;">
@@ -109,15 +117,22 @@
     <form (ngSubmit)="submitLogin()">
       <div class="form-group">
         <label>نام کاربری سوپر ادمین:</label>
-        <input type="text" class="form-control" [(ngModel)]="loginUsername" name="username" required placeholder="admin">
+        <input type="text" class="form-control" [(ngModel)]="loginUsername" name="username" required placeholder="admin" autocomplete="username">
       </div>
 
       <div class="form-group">
         <label>کلمه عبور سوپر ادمین:</label>
-        <input type="password" class="form-control" [(ngModel)]="loginPassword" name="password" required placeholder="رمز عبور را وارد کنید">
+        <input type="password" class="form-control" [(ngModel)]="loginPassword" name="password" required placeholder="رمز عبور را وارد کنید" autocomplete="current-password">
       </div>
 
-      <button type="submit" class="k-btn k-btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 16px; font-size: 14px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; font-size: 12.5px; color: var(--text-muted);">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+          <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" style="accent-color: var(--primary);">
+          <span>ذخیره نام کاربری و ماندن در حساب (۱۰ روز)</span>
+        </label>
+      </div>
+
+      <button type="submit" class="k-btn k-btn-primary" style="width: 100%; justify-content: center; padding: 12px; margin-top: 18px; font-size: 14px;">
         <i class="fa-solid fa-lock-open"></i> ورود امن به سیستم
       </button>
     </form>
