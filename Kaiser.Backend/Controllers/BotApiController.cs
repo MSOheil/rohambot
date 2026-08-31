@@ -31,9 +31,11 @@ namespace Kaiser.Backend.Controllers
         [HttpGet("user/{telegramId}")]
         public async Task<IActionResult> GetOrCreateUser(long telegramId, [FromQuery] string? userName, [FromQuery] string? name, [FromQuery] long? inviterId)
         {
+            bool isNew = false;
             var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == telegramId);
             if (user == null)
             {
+                isNew = true;
                 user = new User
                 {
                     UserId = telegramId,
@@ -65,7 +67,28 @@ namespace Kaiser.Backend.Controllers
                 await _db.SaveChangesAsync();
             }
 
-            return Ok(user);
+            var totalUsers = await _db.Users.CountAsync();
+            var activeServices = await _db.Services.CountAsync(s => s.State == 1 && s.isDelete == 0);
+            long todayStart = ((DateTimeOffset)DateTime.UtcNow.Date).ToUnixTimeSeconds();
+            var todayNewUsers = await _db.Users.CountAsync(u => u.TimeJoin >= todayStart);
+
+            return Ok(new
+            {
+                user.Id,
+                user.UserId,
+                user.UserName,
+                user.Name,
+                user.IsAdmin,
+                user.IsBlock,
+                user.Wallet,
+                user.UseFreeTrial,
+                user.Invited,
+                user.STEP,
+                isNew,
+                totalUsers,
+                todayNewUsers,
+                activeServices
+            });
         }
 
         [HttpPost("user/{telegramId}/step")]

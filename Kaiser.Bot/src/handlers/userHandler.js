@@ -25,6 +25,38 @@ export const userHandler = {
 لطفاً از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`;
 
       await ctx.reply(welcomeText, keyboards.mainMenu(isAdmin));
+
+      // --- Send Real-time Live Report to Admin ---
+      try {
+        const settings = await apiClient.getSettings();
+        const targetAdminId = settings?.adminTelegramId || settings?.suppourtId || process.env.OWNER_ID;
+
+        if (targetAdminId && !isNaN(Number(targetAdminId))) {
+          const userStatus = user.isNew ? '🆕 <b>کاربر جدید (اولین ورود)</b>' : '🔄 <b>کاربر قدیمی (ورود مجدد)</b>';
+          const usernameFormatted = from.username ? `@${from.username}` : '<i>(بدون یوزرنیم)</i>';
+          const nameFormatted = [from.first_name, from.last_name].filter(Boolean).join(' ') || 'کاربر کایزر';
+          const totalUsersCount = user.totalUsers || 1;
+          const todayNewUsersCount = user.todayNewUsers || 1;
+          const activeSubsCount = user.activeServices || 0;
+
+          const reportMsg = `🔔 <b>گزارش استارت ربات کایزر</b>
+
+👤 <b>نام کاربر:</b> ${nameFormatted}
+🔹 <b>نام کاربری:</b> ${usernameFormatted}
+🆔 <b>شناسه عددی:</b> <code>${from.id}</code>
+📌 <b>وضعیت حساب:</b> ${userStatus}
+
+━━━━━━━━━━━━━━━
+📊 <b>آمار زنده سامانه:</b>
+👥 <b>کل کاربران سیستم:</b> <b>${totalUsersCount.toLocaleString('fa-IR')}</b> نفر
+📅 <b>ورودی‌های جدید امروز:</b> <b>${todayNewUsersCount.toLocaleString('fa-IR')}</b> نفر
+⚡ <b>اشتراک‌های فعال:</b> <b>${activeSubsCount.toLocaleString('fa-IR')}</b> سرویس`;
+
+          await ctx.telegram.sendMessage(targetAdminId, reportMsg, { parse_mode: 'HTML' });
+        }
+      } catch (adminErr) {
+        console.warn('Could not send admin start report:', adminErr.message);
+      }
     } catch (err) {
       console.error('Error in handleStart:', err);
       await ctx.reply('👑 به ربات Kaiser خوش آمدید.', keyboards.mainMenu(false));

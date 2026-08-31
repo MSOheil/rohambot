@@ -9,8 +9,6 @@ services:
       POSTGRES_PASSWORD: kjhgfdsaMn01@
     volumes:
       - pg_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kaiser_user -d kaiser_db"]
       interval: 5s
@@ -39,8 +37,6 @@ services:
     volumes:
       - ./Kaiser.Backend/db:/app/db
       - ./logs:/app/logs
-    ports:
-      - "5000:5000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,8 +49,6 @@ services:
       dockerfile: Dockerfile
     container_name: kaiser-frontend
     restart: always
-    ports:
-      - "8080:80"
     networks:
       - kaiser-net
 
@@ -78,8 +72,6 @@ services:
       - ./logs:/app/logs
     depends_on:
       - kaiser-backend
-    ports:
-      - "3000:3000"
     networks:
       - kaiser-net
 
