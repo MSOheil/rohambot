@@ -36,7 +36,7 @@ sudo ufw allow 8080/tcp || true
 sudo ufw --force enable || true
 
 # 4. Config variables
-export BOT_TOKEN="8528982981:AAEHHIKKqqF7mPzhAt9AxS7rph5rhd4qrPE"
+export BOT_TOKEN="8992025570:AAHsMAOG5_UbZXMW_CrkmufBq-4IW4I31zI"
 export API_ID="36814355"
 export API_HASH="1138b0ad3caf2d93a315cf9be02293b0"
 export WEBHOOK_URL="https://botrohamapi.goodino24.ir"

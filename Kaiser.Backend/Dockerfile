@@ -11,5 +11,5 @@ COPY --from=build /app/publish .
 RUN mkdir -p /app/db
 EXPOSE 5000
 ENV ASPNETCORE_URLS=http://+:5000
-ENV KaiserConfig__BotToken=8528982981:AAEHHIKKqqF7mPzhAt9AxS7rph5rhd4qrPE
+ENV KaiserConfig__BotToken=8992025570:AAHsMAOG5_UbZXMW_CrkmufBq-4IW4I31zI
 ENTRYPOINT ["dotnet", "Kaiser.Backend.dll"]

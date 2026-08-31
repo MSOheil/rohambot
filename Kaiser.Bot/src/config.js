@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-    botToken: process.env.BOT_TOKEN || '8528982981:AAEHHIKKqqF7mPzhAt9AxS7rph5rhd4qrPE',
+    botToken: process.env.BOT_TOKEN || '8992025570:AAHsMAOG5_UbZXMW_CrkmufBq-4IW4I31zI',
     apiId: parseInt(process.env.API_ID || '36814355', 10),
     apiHash: process.env.API_HASH || '1138b0ad3caf2d93a315cf9be02293b0',
     webhookUrl: process.env.WEBHOOK_URL || 'https://botrohamapi.goodino24.ir',

@@ -29,7 +29,7 @@
 
 ## 🤖 مشخصات ربات تلگرام
 
-- **توکن ربات:** `8528982981:AAEHHIKKqqF7mPzhAt9AxS7rph5rhd4qrPE`
+- **توکن ربات:** `8992025570:AAHsMAOG5_UbZXMW_CrkmufBq-4IW4I31zI`
 - **کانال قفل عضویت اجباری:** `@namahdoodnet` (`https://t.me/namahdoodnet`)
 - **وب‌هوک تلگرام:** با اجرای پروژه در داکر، ربات به طور خودکار آدرس `https://botrohamapi.goodino24.ir/bot-webhook` را در سرورهای تلگرام ست و تایید می‌کند (`setWebhook`).
 
