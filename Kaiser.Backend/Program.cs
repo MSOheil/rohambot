@@ -60,16 +60,32 @@ if (!Directory.Exists(dbDir))
     Directory.CreateDirectory(dbDir);
 }
 
+// Global Exception and Request Logging Middleware
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        KaiserLogger.Error($"Unhandled API Exception at {context.Request.Path}", ex, "API_EXCEPTION", new { path = context.Request.Path.Value, method = context.Request.Method });
+        throw;
+    }
+});
+
 using (var scope = app.Services.CreateScope())
 {
     try
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         DbInitializer.Initialize(db);
+        KaiserLogger.Info("Database initialized successfully", null, "DATABASE");
     }
     catch (Exception ex)
     {
         app.Logger.LogError(ex, "Error during Database Initialization");
+        KaiserLogger.Error("Error during Database Initialization", ex, "DATABASE_ERROR");
     }
 }
 
@@ -90,5 +106,7 @@ app.MapControllers();
 
 // Fallback to index.html for frontend routing
 app.MapFallbackToFile("index.html");
+
+KaiserLogger.Info("Kaiser Backend API started and ready", new { environment = app.Environment.EnvironmentName }, "STARTUP");
 
 app.Run();

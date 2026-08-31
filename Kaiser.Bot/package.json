@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "set-webhook": "node src/setWebhook.js"
   },
   "dependencies": {
     "axios": "^1.7.9",

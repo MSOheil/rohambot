@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Kaiser.Backend.Data;
@@ -12,11 +13,19 @@ namespace Kaiser.Backend.Controllers
     {
         private readonly AppDbContext _db;
         private readonly ISubscriptionService _subscriptionService;
+        private readonly IConfiguration _config;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public BotApiController(AppDbContext db, ISubscriptionService subscriptionService)
+        public BotApiController(
+            AppDbContext db, 
+            ISubscriptionService subscriptionService,
+            IConfiguration config,
+            IHttpClientFactory httpClientFactory)
         {
             _db = db;
             _subscriptionService = subscriptionService;
+            _config = config;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet("user/{telegramId}")]
@@ -178,6 +187,64 @@ namespace Kaiser.Backend.Controllers
             public long SenderId { get; set; }
             public long ReceiverId { get; set; }
             public long Amount { get; set; }
+        }
+
+        // --- WEBHOOK MANAGEMENT APIS ---
+        [HttpPost("set-webhook")]
+        public async Task<IActionResult> SetWebhook([FromQuery] string? token, [FromQuery] string? webhookUrl)
+        {
+            var botToken = !string.IsNullOrEmpty(token) ? token : _config["KaiserConfig:BotToken"] ?? Environment.GetEnvironmentVariable("KaiserConfig__BotToken");
+            var baseUrl = !string.IsNullOrEmpty(webhookUrl) ? webhookUrl : _config["KaiserConfig:WebhookUrl"] ?? Environment.GetEnvironmentVariable("KaiserConfig__WebhookUrl") ?? "https://botrohamapi.goodino24.ir";
+            var targetEndpoint = $"{baseUrl.TrimEnd('/')}/bot-webhook";
+
+            if (string.IsNullOrEmpty(botToken))
+            {
+                return BadRequest(new { success = false, message = "Bot token is not configured." });
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var payload = new
+                {
+                    url = targetEndpoint,
+                    drop_pending_updates = true,
+                    allowed_updates = new[] { "message", "callback_query", "channel_post", "chat_member" }
+                };
+
+                var jsonContent = new StringContent(JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+                var response = await client.PostAsync($"https://api.telegram.org/bot{botToken}/setWebhook", jsonContent);
+                var resStr = await response.Content.ReadAsStringAsync();
+
+                return Content(resStr, "application/json");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
+        }
+
+        [HttpGet("webhook-info")]
+        public async Task<IActionResult> GetWebhookInfo([FromQuery] string? token)
+        {
+            var botToken = !string.IsNullOrEmpty(token) ? token : _config["KaiserConfig:BotToken"] ?? Environment.GetEnvironmentVariable("KaiserConfig__BotToken");
+            if (string.IsNullOrEmpty(botToken))
+            {
+                return BadRequest(new { success = false, message = "Bot token is not configured." });
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.GetAsync($"https://api.telegram.org/bot{botToken}/getWebhookInfo");
+                var resStr = await response.Content.ReadAsStringAsync();
+
+                return Content(resStr, "application/json");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
         }
     }
 }

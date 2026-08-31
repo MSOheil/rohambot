@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Kaiser.Backend.Controllers;
 using Kaiser.Backend.Models;
+using Kaiser.Backend.Services;
 
 namespace Kaiser.Backend.Data
 {
@@ -8,7 +9,12 @@ namespace Kaiser.Backend.Data
     {
         public static void Initialize(AppDbContext context)
         {
-            // Ensure table creation for AdminAccounts
+            var isPostgres = context.Database.IsNpgsql();
+            var dbProvider = isPostgres ? "PostgreSQL" : "SQLite";
+
+            KaiserLogger.Database($"Checking database connection ({dbProvider})...");
+
+            // 1. Ensure Table Schema Creation
             try
             {
                 if (context.Database.IsSqlite())
@@ -28,10 +34,14 @@ namespace Kaiser.Backend.Data
                 {
                     context.Database.EnsureCreated();
                 }
+                KaiserLogger.Database($"✅ Database connection established and tables verified ({dbProvider})", new { provider = dbProvider });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                KaiserLogger.Database($"❌ Database schema initialization failed on {dbProvider}: {ex.Message}", new { error = ex.Message }, false);
+            }
 
-            // Seed Super Admin account (admin / kjhgfdsaMn01@)
+            // 2. Seed Super Admin account (admin / kjhgfdsaMn01@)
             try
             {
                 var admin = context.AdminAccounts.FirstOrDefault(a => a.Username == "admin");
@@ -45,11 +55,19 @@ namespace Kaiser.Backend.Data
                         CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     });
                     context.SaveChanges();
+                    KaiserLogger.Success("SuperAdmin account seeded successfully (Username: admin)", null, "AUTH");
+                }
+                else
+                {
+                    KaiserLogger.Info("SuperAdmin account verified (Username: admin)", null, "AUTH");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                KaiserLogger.Error("Error checking SuperAdmin account", ex, "AUTH");
+            }
 
-            // Seed default settings if not exists
+            // 3. Seed default settings if not exists
             try
             {
                 if (!context.Settings.Any())
@@ -80,11 +98,19 @@ namespace Kaiser.Backend.Data
                         RewardInvite = 10
                     });
                     context.SaveChanges();
+                    KaiserLogger.Success("Default system settings seeded successfully", null, "SETTINGS");
+                }
+                else
+                {
+                    KaiserLogger.Info("Default system settings verified", null, "SETTINGS");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                KaiserLogger.Error("Error initializing default settings", ex, "SETTINGS");
+            }
 
-            // Seed default admin telegram user
+            // 4. Seed default admin telegram user
             try
             {
                 if (!context.Users.Any(u => u.UserId == 123456789))
@@ -99,9 +125,13 @@ namespace Kaiser.Backend.Data
                         TimeJoin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     });
                     context.SaveChanges();
+                    KaiserLogger.Success("Default admin telegram user created (ID: 123456789)", null, "DATABASE");
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                KaiserLogger.Error("Error seeding default admin user", ex, "DATABASE");
+            }
         }
     }
 }

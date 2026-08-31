@@ -82,7 +82,7 @@ export const userHandler = {
     try {
       const user = await apiClient.getOrCreateUser(userId, ctx.from.username, ctx.from.first_name);
       const walletToman = (user.wallet || 0).toLocaleString('fa-IR');
-      const botUsername = ctx.botInfo.username;
+      const botUsername = ctx.botInfo?.username || 'bot';
       const refLink = `https://t.me/${botUsername}?start=ref_${userId}`;
 
       const text = `👤 **اطلاعات حساب کاربری شما:**

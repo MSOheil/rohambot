@@ -17,7 +17,7 @@ namespace Kaiser.Backend.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Kaiser Background Worker Service started.");
+            KaiserLogger.Success("Kaiser Background Worker Service started", null, "BACKGROUND_WORKER");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -33,7 +33,7 @@ namespace Kaiser.Backend.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in Kaiser Background Worker cycle");
+                    KaiserLogger.Error("Error in Kaiser Background Worker cycle", ex, "BACKGROUND_WORKER");
                 }
 
                 // Wait 2 minutes between cycles
@@ -54,6 +54,11 @@ namespace Kaiser.Backend.Services
                     if (newConn == 0)
                     {
                         server.DateConnectionLost = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                        KaiserLogger.Warn($"⚠️ Server connection lost: [{server.Id}] {server.Name} ({server.Url})", new { serverId = server.Id, serverName = server.Name, error = result.Message }, "SERVER_HEALTH");
+                    }
+                    else
+                    {
+                        KaiserLogger.Success($"✅ Server connection restored: [{server.Id}] {server.Name} (Ping: {result.PingMs}ms)", new { serverId = server.Id, serverName = server.Name, ping = result.PingMs }, "SERVER_HEALTH");
                     }
                 }
             }
@@ -65,20 +70,30 @@ namespace Kaiser.Backend.Services
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             var activeServices = await db.Services.Where(s => s.State == 1 && s.isDelete == 0).ToListAsync();
 
+            int deactivatedCount = 0;
             foreach (var s in activeServices)
             {
                 // Check if time expired
                 if (s.EndDate > 0 && s.EndDate < now)
                 {
                     s.State = 0;
+                    deactivatedCount++;
+                    KaiserLogger.Warn($"Service #{s.Id} ({s.Email}) expired by date and deactivated", new { serviceId = s.Id, email = s.Email }, "SUBSCRIPTION");
                 }
                 // Check if traffic exceeded
                 else if (s.TotalUsed > 0 && (s.Upload + s.Download) >= s.TotalUsed)
                 {
                     s.State = 0;
+                    deactivatedCount++;
+                    KaiserLogger.Warn($"Service #{s.Id} ({s.Email}) exceeded traffic limit and deactivated", new { serviceId = s.Id, email = s.Email, totalUsed = s.TotalUsed }, "SUBSCRIPTION");
                 }
             }
-            await db.SaveChangesAsync();
+
+            if (deactivatedCount > 0)
+            {
+                await db.SaveChangesAsync();
+                KaiserLogger.Info($"Deactivated {deactivatedCount} expired services", new { count = deactivatedCount }, "SUBSCRIPTION");
+            }
         }
 
         private async Task CleanupOldPendingOrdersAsync(AppDbContext db)
@@ -92,6 +107,7 @@ namespace Kaiser.Backend.Services
                     o.State = 2; // mark rejected / cancelled
                 }
                 await db.SaveChangesAsync();
+                KaiserLogger.Info($"Cleaned up {oldPending.Count} expired pending orders", new { count = oldPending.Count }, "ORDERS");
             }
         }
     }

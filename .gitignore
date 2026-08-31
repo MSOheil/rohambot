@@ -21,7 +21,8 @@ publish/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Daily System & Error Logs (Ignored from GitHub)
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*

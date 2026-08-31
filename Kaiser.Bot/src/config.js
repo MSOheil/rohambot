@@ -6,10 +6,10 @@ export const config = {
     apiId: parseInt(process.env.API_ID || '36814355', 10),
     apiHash: process.env.API_HASH || '1138b0ad3caf2d93a315cf9be02293b0',
     webhookUrl: process.env.WEBHOOK_URL || 'https://botrohamapi.goodino24.ir',
-    backendUrl: process.env.BACKEND_URL || 'http://localhost:5000',
+    backendUrl: process.env.BACKEND_URL || 'http://kaiser-backend:5000',
     ownerId: parseInt(process.env.OWNER_ID || '123456789', 10),
     port: parseInt(process.env.PORT || '3000', 10),
-    useWebhook: process.env.USE_WEBHOOK === 'true',
+    useWebhook: process.env.USE_WEBHOOK !== 'false' && process.env.USE_WEBHOOK !== '0',
     requiredChannel: '@namahdoodnet',
     channelUrl: 'https://t.me/namahdoodnet'
 };
