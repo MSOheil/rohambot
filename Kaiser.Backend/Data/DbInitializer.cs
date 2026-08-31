@@ -113,11 +113,11 @@ namespace Kaiser.Backend.Data
             // 4. Seed default admin telegram user
             try
             {
-                if (!context.Users.Any(u => u.UserId == 123456789))
+                if (!context.Users.Any(u => u.UserId == 8793231252))
                 {
                     context.Users.Add(new User
                     {
-                        UserId = 123456789,
+                        UserId = 8793231252,
                         UserName = "kaiser_admin",
                         Name = "Admin",
                         IsAdmin = 1,
@@ -125,7 +125,7 @@ namespace Kaiser.Backend.Data
                         TimeJoin = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     });
                     context.SaveChanges();
-                    KaiserLogger.Success("Default admin telegram user created (ID: 123456789)", null, "DATABASE");
+                    KaiserLogger.Success("Default admin telegram user created (ID: 8793231252)", null, "DATABASE");
                 }
             }
             catch (Exception ex)

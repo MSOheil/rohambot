@@ -291,7 +291,7 @@ namespace Kaiser.Backend.Models
         public long InviteNeed { get; set; } = 0;
         [Column("SuppourtId ")]
         public string? SuppourtId { get; set; }
-        public string? AdminTelegramId { get; set; } = "123456789";
+        public string? AdminTelegramId { get; set; } = "8793231252";
         public string? SafeMode { get; set; }
         public long SafeModCat { get; set; } = 0;
     }

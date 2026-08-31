@@ -33,7 +33,7 @@ services:
       - KaiserConfig__ApiHash=1138b0ad3caf2d93a315cf9be02293b0
       - KaiserConfig__WebhookUrl=https://botrohamapi.goodino24.ir
       - KaiserConfig__PanelUrl=https://botroham.goodino24.ir
-      - KaiserConfig__OwnerId=123456789
+      - KaiserConfig__OwnerId=8793231252
     volumes:
       - ./Kaiser.Backend/db:/app/db
       - ./logs:/app/logs
@@ -64,7 +64,7 @@ services:
       - API_HASH=1138b0ad3caf2d93a315cf9be02293b0
       - WEBHOOK_URL=https://botrohamapi.goodino24.ir
       - BACKEND_URL=http://kaiser-backend:5000
-      - OWNER_ID=123456789
+      - OWNER_ID=8793231252
       - PORT=3000
       - USE_WEBHOOK=true
       - LOGS_DIR=/app/logs

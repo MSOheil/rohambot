@@ -7,7 +7,7 @@ export const config = {
     apiHash: process.env.API_HASH || '1138b0ad3caf2d93a315cf9be02293b0',
     webhookUrl: process.env.WEBHOOK_URL || 'https://botrohamapi.goodino24.ir',
     backendUrl: process.env.BACKEND_URL || 'http://kaiser-backend:5000',
-    ownerId: parseInt(process.env.OWNER_ID || '123456789', 10),
+    ownerId: parseInt(process.env.OWNER_ID || '8793231252', 10),
     port: parseInt(process.env.PORT || '3000', 10),
     useWebhook: process.env.USE_WEBHOOK !== 'false' && process.env.USE_WEBHOOK !== '0',
     requiredChannel: '@namahdoodnet',

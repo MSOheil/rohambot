@@ -25,7 +25,7 @@ import { ApiService } from '../../services/api.service';
             <label style="color: #a5b4fc; font-weight: 700;">
               <i class="fa-brands fa-telegram"></i> شناسه عددی تلگرام ادمین (دریافت گزارش ورود و اعلان‌ها):
             </label>
-            <input type="text" class="form-control" [(ngModel)]="settings.adminTelegramId" name="adminTelegramId" placeholder="مثال: 123456789">
+            <input type="text" class="form-control" [(ngModel)]="settings.adminTelegramId" name="adminTelegramId" placeholder="مثال: 8793231252">
             <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
               وقتی کاربری ربات را استارت می‌زند یا سفارشی ثبت می‌شود، گزارش لحظه‌ای با تعداد کل کاربران و مشخصات فرد به این آیدی عددی ارسال می‌شود.
             </small>

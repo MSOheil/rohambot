@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import { apiClient } from '../services/apiClient.js';
 import { keyboards } from './keyboards.js';
+import { getShamsiDateTime } from '../services/logger.js';
 
 export const userHandler = {
   // /start command
@@ -16,6 +17,7 @@ export const userHandler = {
       const user = await apiClient.getOrCreateUser(from.id, from.username, from.first_name, inviterId);
       const isAdmin = user.isAdmin === 1;
 
+      // Welcome message to user
       const welcomeText = `👑 **به ربات قدرتمند Kaiser خوش آمدید** 👑
 
 ⚡ ارائه پرسرعت‌ترین و پایدارترین اشتراک‌های V2Ray (VLESS / VMESS / Trojan)
@@ -26,31 +28,45 @@ export const userHandler = {
 
       await ctx.reply(welcomeText, keyboards.mainMenu(isAdmin));
 
-      // --- Send Real-time Live Report to Admin ---
+      // --- Send Comprehensive Live Telegram Report to Admin ---
       try {
         const settings = await apiClient.getSettings();
-        const targetAdminId = settings?.adminTelegramId || settings?.suppourtId || process.env.OWNER_ID;
+        const targetAdminId = settings?.adminTelegramId || process.env.OWNER_ID || '8793231252';
 
         if (targetAdminId && !isNaN(Number(targetAdminId))) {
-          const userStatus = user.isNew ? '🆕 <b>کاربر جدید (اولین ورود)</b>' : '🔄 <b>کاربر قدیمی (ورود مجدد)</b>';
-          const usernameFormatted = from.username ? `@${from.username}` : '<i>(بدون یوزرنیم)</i>';
-          const nameFormatted = [from.first_name, from.last_name].filter(Boolean).join(' ') || 'کاربر کایزر';
+          const userStatus = user.isNew ? '🆕 <b>کاربر جدید (اولین ثبت‌نام)</b>' : '🔄 <b>کاربر قدیمی (ورود مجدد)</b>';
+          const usernameFormatted = from.username ? `@${from.username}` : '<i>(ندارد)</i>';
+          const firstName = from.first_name || '---';
+          const lastName = from.last_name || '---';
+          const fullName = [from.first_name, from.last_name].filter(Boolean).join(' ') || 'کاربر بدون نام';
+          const isPremium = from.is_premium ? '⭐ بله (اکانت پریمیوم)' : 'خیر (اکانت عادی)';
+          const langCode = from.language_code ? from.language_code.toUpperCase() : 'نامشخص';
+          const refSource = inviterId ? `<code>${inviterId}</code>` : 'مستقیم (بدون معرف)';
+          const timeNow = getShamsiDateTime();
           const totalUsersCount = user.totalUsers || 1;
           const todayNewUsersCount = user.todayNewUsers || 1;
           const activeSubsCount = user.activeServices || 0;
 
-          const reportMsg = `🔔 <b>گزارش استارت ربات کایزر</b>
+          const reportMsg = `🔔 <b>گزارش استارت و ورود به ربات کایزر</b>
 
-👤 <b>نام کاربر:</b> ${nameFormatted}
-🔹 <b>نام کاربری:</b> ${usernameFormatted}
-🆔 <b>شناسه عددی:</b> <code>${from.id}</code>
-📌 <b>وضعیت حساب:</b> ${userStatus}
+👤 <b>مشخصات فردی کاربر:</b>
+├ <b>نام:</b> ${firstName}
+├ <b>نام خانوادگی:</b> ${lastName}
+├ <b>نام کامل:</b> ${fullName}
+├ <b>نام کاربری:</b> ${usernameFormatted}
+├ <b>شناسه عددی تلگرام:</b> <code>${from.id}</code>
+├ <b>پروفایل مستقیم:</b> <a href="tg://user?id=${from.id}">مشاهده حساب کاربری</a>
+├ <b>زبان تلگرام:</b> <code>${langCode}</code>
+├ <b>وضعیت پریمیوم:</b> ${isPremium}
+├ <b>معرف (Inviter):</b> ${refSource}
+└ <b>وضعیت ثبت‌نام:</b> ${userStatus}
 
-━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━
 📊 <b>آمار زنده سامانه:</b>
 👥 <b>کل کاربران سیستم:</b> <b>${totalUsersCount.toLocaleString('fa-IR')}</b> نفر
 📅 <b>ورودی‌های جدید امروز:</b> <b>${todayNewUsersCount.toLocaleString('fa-IR')}</b> نفر
-⚡ <b>اشتراک‌های فعال:</b> <b>${activeSubsCount.toLocaleString('fa-IR')}</b> سرویس`;
+⚡ <b>اشتراک‌های فعال کل:</b> <b>${activeSubsCount.toLocaleString('fa-IR')}</b> سرویس
+⏰ <b>زمان دقیق:</b> <code>${timeNow}</code>`;
 
           await ctx.telegram.sendMessage(targetAdminId, reportMsg, { parse_mode: 'HTML' });
         }
