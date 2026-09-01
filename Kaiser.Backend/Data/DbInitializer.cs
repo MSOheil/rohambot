@@ -29,10 +29,21 @@ namespace Kaiser.Backend.Data
                             LastLogin INTEGER NOT NULL
                         );
                     ");
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw("ALTER TABLE Setting ADD COLUMN AdminTelegramId TEXT;");
+                    }
+                    catch { }
                 }
                 else
                 {
                     context.Database.EnsureCreated();
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw(@"ALTER TABLE ""Setting"" ADD COLUMN IF NOT EXISTS ""AdminTelegramId"" text;");
+                    }
+                    catch { }
                 }
                 KaiserLogger.Database($"✅ Database connection established and tables verified ({dbProvider})", new { provider = dbProvider });
             }
