@@ -87,6 +87,10 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/users/wallet`, { userId, amount });
   }
 
+  deleteUser(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/users/${id}`);
+  }
+
   // Orders
   getOrders(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/orders`);
@@ -134,5 +138,10 @@ export class ApiService {
 
   updateSettings(settings: any): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/settings`, settings);
+  }
+
+  // Broadcast
+  broadcastMessage(payload: { message: string; targetUserIds?: number[]; sendToAll: boolean }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/broadcast`, payload);
   }
 }

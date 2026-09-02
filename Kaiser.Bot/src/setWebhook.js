@@ -29,7 +29,7 @@ async function setupWebhook() {
     const setRes = await axiosInstance.post(`https://api.telegram.org/bot${token}/setWebhook`, {
       url: webhookUrl,
       drop_pending_updates: true,
-      allowed_updates: ['message', 'callback_query', 'channel_post', 'chat_member']
+      allowed_updates: ['message', 'callback_query']
     });
 
     console.log('📥 Telegram API Response:', setRes.data);

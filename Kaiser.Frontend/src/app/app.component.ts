@@ -12,8 +12,8 @@ import { filter } from 'rxjs/operators';
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit {
-  title = 'Kaiser Management Panel';
-  loginUsername = 'admin';
+  title = 'Namahdood Net Panel';
+  loginUsername = 'roham';
   loginPassword = '';
   loginError = '';
   rememberMe = true;

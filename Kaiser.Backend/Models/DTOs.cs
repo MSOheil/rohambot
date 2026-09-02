@@ -82,7 +82,7 @@ namespace Kaiser.Backend.Models
         public string Description { get; set; } = "";
         public int MonthCount { get; set; } = 1;
         public long Price { get; set; }
-        public long VolumeGB { get; set; }
+        public object? VolumeGB { get; set; }
         public long CatId { get; set; }
         public int UserLimit { get; set; } = 1;
         public int SpeedLimit { get; set; } = 0;
@@ -153,5 +153,21 @@ namespace Kaiser.Backend.Models
         public string StatusText { get; set; } = "";
         public string SubLink { get; set; } = "";
         public List<string> Configs { get; set; } = new();
+    }
+
+    public class BroadcastRequest
+    {
+        public string Message { get; set; } = string.Empty;
+        public List<long>? TargetUserIds { get; set; }
+        public bool SendToAll { get; set; } = true;
+    }
+
+    public class BroadcastResult
+    {
+        public bool Success { get; set; }
+        public int TotalTargets { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailCount { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 }

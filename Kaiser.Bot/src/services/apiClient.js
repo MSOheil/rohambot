@@ -29,6 +29,11 @@ export const apiClient = {
     return res.data;
   },
 
+  async getAllUserIds() {
+    const res = await api.get('/api/bot/user-ids');
+    return res.data;
+  },
+
   async getCatalog() {
     const res = await api.get('/api/bot/catalog');
     return res.data;

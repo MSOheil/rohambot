@@ -5,9 +5,11 @@
   <!-- Sidebar Navigation Drawer -->
   <aside class="sidebar" [class.mobile-open]="mobileSidebarOpen">
     <div class="brand-header">
-      <div class="brand-logo">👑</div>
+      <div class="brand-logo">
+        <img src="assets/logo.png" alt="Namahdoodnet Logo">
+      </div>
       <div style="flex: 1;">
-        <div class="brand-title">KAISER PANEL</div>
+        <div class="brand-title">NAMAHDOOD NET</div>
         <div class="brand-sub">مدیریت هوشمند سابسکریپشن و فروش</div>
       </div>
       <!-- Close button on mobile -->
@@ -42,6 +44,11 @@
         <span>مدیریت کاربران</span>
       </a>
 
+      <a class="nav-item" routerLink="/broadcast" routerLinkActive="active" (click)="closeMobileSidebar()">
+        <i class="fa-solid fa-bullhorn"></i>
+        <span>ارسال پیام و اطلاعیه</span>
+      </a>
+
       <a class="nav-item" routerLink="/orders" routerLinkActive="active" (click)="closeMobileSidebar()">
         <i class="fa-solid fa-receipt"></i>
         <span>سفارشات و تراکنش‌ها</span>
@@ -59,7 +66,7 @@
     </nav>
 
     <div style="padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 11px; color: var(--text-muted); text-align: center;">
-      نسخه ۲.۰.۰ | Kaiser Management Panel
+      نسخه ۲.۰.۰ | Namahdoodnet Panel
     </div>
   </aside>
 
@@ -105,8 +112,8 @@
 <div class="modal-overlay" *ngIf="showLoginModal">
   <div class="modal-content" style="max-width: 420px; border: 1px solid rgba(99, 102, 241, 0.4); box-shadow: 0 0 40px rgba(99, 102, 241, 0.25);">
     <div style="text-align: center; margin-bottom: 24px;">
-      <div style="font-size: 38px; margin-bottom: 8px;">👑</div>
-      <h2 style="font-size: 18px; font-weight: 800;">ورود به پنل مدیریت کایزر</h2>
+      <img src="assets/logo.png" style="width: 76px; height: 76px; border-radius: 20px; margin-bottom: 12px; box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);" alt="Logo">
+      <h2 style="font-size: 18px; font-weight: 800;">ورود به پنل مدیریت نامحدود نت</h2>
       <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">لطفاً مشخصات سوپر ادمین را وارد نمایید</p>
     </div>
 
@@ -117,7 +124,7 @@
     <form (ngSubmit)="submitLogin()">
       <div class="form-group">
         <label>نام کاربری سوپر ادمین:</label>
-        <input type="text" class="form-control" [(ngModel)]="loginUsername" name="username" required placeholder="admin" autocomplete="username">
+        <input type="text" class="form-control" [(ngModel)]="loginUsername" name="username" required placeholder="roham" autocomplete="username">
       </div>
 
       <div class="form-group">

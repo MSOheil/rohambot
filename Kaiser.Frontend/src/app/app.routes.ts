@@ -7,6 +7,7 @@ import { UsersComponent } from './pages/users/users.component';
 import { OrdersComponent } from './pages/orders/orders.component';
 import { SettingsComponent } from './pages/settings/settings.component';
 import { SubPreviewComponent } from './pages/sub-preview/sub-preview.component';
+import { BroadcastComponent } from './pages/broadcast/broadcast.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -15,6 +16,7 @@ export const routes: Routes = [
   { path: 'plans', component: PlansComponent },
   { path: 'services', component: ServicesComponent },
   { path: 'users', component: UsersComponent },
+  { path: 'broadcast', component: BroadcastComponent },
   { path: 'orders', component: OrdersComponent },
   { path: 'settings', component: SettingsComponent },
   { path: 'sub-preview', component: SubPreviewComponent },

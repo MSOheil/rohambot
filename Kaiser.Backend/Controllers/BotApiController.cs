@@ -113,6 +113,17 @@ namespace Kaiser.Backend.Controllers
             return Ok(setting);
         }
 
+        [HttpGet("user-ids")]
+        public async Task<IActionResult> GetAllUserIds()
+        {
+            var userIds = await _db.Users
+                .Where(u => u.UserId > 10000)
+                .Select(u => u.UserId)
+                .Distinct()
+                .ToListAsync();
+            return Ok(userIds);
+        }
+
         [HttpGet("catalog")]
         public async Task<IActionResult> GetCatalog()
         {

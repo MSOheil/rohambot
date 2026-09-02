@@ -47,9 +47,14 @@ import { ApiService } from '../../services/api.service';
                 </span>
               </td>
               <td>
-                <button class="k-btn k-btn-outline" style="padding: 4px 10px; font-size: 11px;" (click)="openWalletModal(u)">
-                  <i class="fa-solid fa-wallet"></i> شارژ کیف پول
-                </button>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <button class="k-btn k-btn-outline" style="padding: 4px 10px; font-size: 11px;" (click)="openWalletModal(u)">
+                    <i class="fa-solid fa-wallet"></i> شارژ کیف پول
+                  </button>
+                  <button class="k-btn k-btn-danger" style="padding: 4px 8px; font-size: 11px;" (click)="deleteUser(u)" title="حذف کاربر">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -100,6 +105,21 @@ export class UsersComponent implements OnInit {
   openWalletModal(u: any) {
     this.selectedUser = u;
     this.showWalletModal = true;
+  }
+
+  deleteUser(u: any) {
+    const userLabel = u.userName ? `@${u.userName}` : `کاربر ${u.userId}`;
+    if (confirm(`آیا از حذف ${userLabel} اطمینان دارید؟`)) {
+      this.api.deleteUser(u.id).subscribe({
+        next: () => {
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error(err);
+          alert('خطا در حذف کاربر.');
+        }
+      });
+    }
   }
 
   submitWallet() {

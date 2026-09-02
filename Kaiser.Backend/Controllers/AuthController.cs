@@ -39,13 +39,13 @@ namespace Kaiser.Backend.Controllers
             if (admin == null || admin.PasswordHash != hash)
             {
                 // Fallback check for exact required password if newly seeded
-                if (req.Username.Trim().ToLower() == "admin" && req.Password == "kjhgfdsaMn01@")
+                if ((req.Username.Trim().ToLower() == "roham" || req.Username.Trim().ToLower() == "admin") && req.Password == "kjhgfdsaMn01@")
                 {
                     if (admin == null)
                     {
                         admin = new AdminAccount
                         {
-                            Username = "admin",
+                            Username = req.Username.Trim().ToLower(),
                             PasswordHash = hash,
                             Role = "SuperAdmin",
                             CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
@@ -84,7 +84,8 @@ namespace Kaiser.Backend.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var admin = await _db.AdminAccounts.FirstOrDefaultAsync(a => a.Username == "admin");
+            var admin = await _db.AdminAccounts.FirstOrDefaultAsync(a => a.Username == "roham")
+                     ?? await _db.AdminAccounts.FirstOrDefaultAsync();
             if (admin == null) return NotFound();
             return Ok(new { username = admin.Username, role = admin.Role, lastLogin = admin.LastLogin });
         }

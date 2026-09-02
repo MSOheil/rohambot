@@ -26,8 +26,8 @@ import * as QRCode from 'qrcode';
 
       <!-- Real Subscription Card -->
       <div class="k-card" style="text-align: center; border: 1px solid rgba(99, 102, 241, 0.3); box-shadow: 0 0 30px rgba(99, 102, 241, 0.2);" *ngIf="subData">
-        <div style="font-size: 36px; margin-bottom: 8px;">👑</div>
-        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">{{ subData.email || 'Kaiser Subscription' }}</h2>
+        <img src="assets/logo.png" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 12px; box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);" alt="Logo">
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 4px;">{{ subData.email || 'Namahdoodnet Subscription' }}</h2>
         <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">
           وضعیت: 
           <span class="badge" [ngClass]="subData.state === 1 ? 'badge-success' : 'badge-danger'">

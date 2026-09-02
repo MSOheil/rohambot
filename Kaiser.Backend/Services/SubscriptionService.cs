@@ -189,7 +189,7 @@ namespace Kaiser.Backend.Services
                 authorization = Guid.NewGuid().ToString("N"),
                 CreateDate = now,
                 EndDate = expireTime,
-                TotalUsed = plan.Volume > 0 ? plan.Volume : 50L * 1024L * 1024L * 1024L,
+                TotalUsed = plan.Volume > 0 ? plan.Volume : 0,
                 State = 1,
                 TypeService = order.Type ?? "sub",
                 UserLimit = plan.UserLimit > 0 ? plan.UserLimit : 2,

@@ -18,20 +18,34 @@ export const userHandler = {
       const defaultAdmins = ['8793231252', '8429466517'];
       const isAdmin = user.isAdmin === 1 || defaultAdmins.includes(String(from.id));
 
-      // Welcome message to user
-      const welcomeText = `👑 **به ربات قدرتمند Kaiser خوش آمدید** 👑
+      // Fetch settings to get dynamic welcome message & admin IDs
+      let settings = null;
+      try {
+        settings = await apiClient.getSettings();
+      } catch (e) {
+        console.warn('Could not fetch settings for start handler:', e.message);
+      }
 
-⚡ ارائه پرسرعت‌ترین و پایدارترین اشتراک‌های V2Ray (VLESS / VMESS / Trojan)
-🔒 حفظ امنیت و حریم خصوصی با سرورهای قدرتمند و پینگ پایین
-🚀 تحویل آنی و قابلیت مدیریت هوشمند سابسکریپشن
+      // Dynamic Welcome message from database, with fallback
+      const defaultWelcome = `به ربات   «نامحدود نت»   خوش آمدید.
 
-لطفاً از منوی زیر گزینه مورد نظر خود را انتخاب کنید:`;
+
+⚡️ارائه پر سرعت و نامحدود اشتراک های V2ray برای استفاده 
+شخصی و مولتی لوکیشن open vpn 
+🇩🇪🇳🇱🇯🇴🇹🇷
+مخصوص گیم، ترید ،فیلم سرعت 🛜بسیار بالاتر و پینگ پایین.
+⏱️تحویل آنی و قابلیت مدیریت هوشمند سابسکریبشن
+
+لطفا از منوی زیر  گزینه مورد نظر خود را انتخاب کنید👇👇👇`;
+
+      const welcomeText = (settings && settings.welcomeMessage && settings.welcomeMessage.trim())
+        ? settings.welcomeMessage
+        : defaultWelcome;
 
       await ctx.reply(welcomeText, keyboards.mainMenu(isAdmin));
 
       // --- Send Comprehensive Live Telegram Report to All Admins ---
       try {
-        const settings = await apiClient.getSettings();
         const configuredAdmins = (settings?.adminTelegramId || process.env.OWNER_ID || '8793231252,8429466517')
           .split(/[\s,;|]+/)
           .map(id => id.trim())
@@ -83,7 +97,7 @@ export const userHandler = {
       }
     } catch (err) {
       console.error('Error in handleStart:', err);
-      await ctx.reply('👑 به ربات Kaiser خوش آمدید.', keyboards.mainMenu(false));
+      await ctx.reply('به ربات «نامحدود نت» خوش آمدید.', keyboards.mainMenu(false));
     }
   },
 
@@ -172,12 +186,14 @@ export const userHandler = {
 
       for (const s of services) {
         const usedGB = (s.usedBytes / (1024 * 1024 * 1024)).toFixed(2);
-        const totalGB = (s.totalUsed / (1024 * 1024 * 1024)).toFixed(0);
+        const totalGBText = s.totalUsed > 0 
+          ? `${(s.totalUsed / (1024 * 1024 * 1024)).toFixed(0)} گیگابایت`
+          : 'نامحدود ♾️';
         const statusIcon = s.state === 1 ? '🟢 فعال' : '🔴 منقضی/غیرفعال';
 
         const msg = `👑 **مشخصات اشتراک #${s.id}**
 📦 **پلن:** ${s.planName}
-📊 **مصرف:** ${usedGB} گیگابایت از ${totalGB} گیگابایت
+📊 **مصرف:** ${usedGB} گیگابایت از ${totalGBText}
 ⏳ **زمان باقی‌مانده:** ${s.daysRemaining} روز
 ⚡ **وضعیت:** ${statusIcon}
 

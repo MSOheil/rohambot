@@ -1,8 +1,42 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Kaiser.Backend.Models
 {
+    public class StringOrArrayJsonConverter : JsonConverter<string?>
+    {
+        public override string? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                return reader.GetString();
+            }
+            if (reader.TokenType == JsonTokenType.StartArray)
+            {
+                var list = new List<string>();
+                while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
+                {
+                    if (reader.TokenType == JsonTokenType.String)
+                    {
+                        list.Add(reader.GetString() ?? "");
+                    }
+                }
+                return string.Join("\n", list);
+            }
+            if (reader.TokenType == JsonTokenType.Null)
+            {
+                return null;
+            }
+            return reader.GetString();
+        }
+
+        public override void Write(Utf8JsonWriter writer, string? value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value);
+        }
+    }
     [Table("AdminAccounts")]
     public class AdminAccount
     {
@@ -294,6 +328,13 @@ namespace Kaiser.Backend.Models
         public string? AdminTelegramId { get; set; } = "8793231252,8429466517";
         public string? SafeMode { get; set; }
         public long SafeModCat { get; set; } = 0;
+        public long NightMessageEnabled { get; set; } = 1;
+        public string? NightMessageTime { get; set; } = "23:00";
+        [JsonConverter(typeof(StringOrArrayJsonConverter))]
+        public string? NightMessageText { get; set; } = "🌙 شب شما بخیر و آرامش!\n\n✨ با تشکر از همراهی شما با نامحدود نت. تمامی سرورها و کانفیگ‌ها پایدار و با سرعت بالا در دسترس شما هستند.\n\nشبتون پر از آرامش 💫";
+
+        [JsonConverter(typeof(StringOrArrayJsonConverter))]
+        public string? WelcomeMessage { get; set; }
     }
 
     [Table("imperfect")]

@@ -35,6 +35,30 @@ namespace Kaiser.Backend.Data
                         context.Database.ExecuteSqlRaw("ALTER TABLE Setting ADD COLUMN AdminTelegramId TEXT;");
                     }
                     catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw("ALTER TABLE Setting ADD COLUMN NightMessageEnabled INTEGER DEFAULT 1;");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw("ALTER TABLE Setting ADD COLUMN NightMessageTime TEXT DEFAULT '23:00';");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw("ALTER TABLE Setting ADD COLUMN NightMessageText TEXT;");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw("ALTER TABLE Setting ADD COLUMN WelcomeMessage TEXT;");
+                    }
+                    catch { }
                 }
                 else
                 {
@@ -42,6 +66,30 @@ namespace Kaiser.Backend.Data
                     try
                     {
                         context.Database.ExecuteSqlRaw(@"ALTER TABLE ""Setting"" ADD COLUMN IF NOT EXISTS ""AdminTelegramId"" text;");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw(@"ALTER TABLE ""Setting"" ADD COLUMN IF NOT EXISTS ""NightMessageEnabled"" bigint DEFAULT 1;");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw(@"ALTER TABLE ""Setting"" ADD COLUMN IF NOT EXISTS ""NightMessageTime"" text DEFAULT '23:00';");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw(@"ALTER TABLE ""Setting"" ADD COLUMN IF NOT EXISTS ""NightMessageText"" text;");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        context.Database.ExecuteSqlRaw(@"ALTER TABLE ""Setting"" ADD COLUMN IF NOT EXISTS ""WelcomeMessage"" text;");
                     }
                     catch { }
                 }
@@ -52,25 +100,35 @@ namespace Kaiser.Backend.Data
                 KaiserLogger.Database($"❌ Database schema initialization failed on {dbProvider}: {ex.Message}", new { error = ex.Message }, false);
             }
 
-            // 2. Seed Super Admin account (admin / kjhgfdsaMn01@)
+            // 2. Seed Super Admin account (Username: roham / Password: kjhgfdsaMn01@)
             try
             {
-                var admin = context.AdminAccounts.FirstOrDefault(a => a.Username == "admin");
-                if (admin == null)
+                var oldAdmin = context.AdminAccounts.FirstOrDefault(a => a.Username == "admin");
+                if (oldAdmin != null)
+                {
+                    context.AdminAccounts.Remove(oldAdmin);
+                    context.SaveChanges();
+                }
+
+                var rohamAdmin = context.AdminAccounts.FirstOrDefault(a => a.Username == "roham");
+                if (rohamAdmin == null)
                 {
                     context.AdminAccounts.Add(new AdminAccount
                     {
-                        Username = "admin",
+                        Username = "roham",
                         PasswordHash = AuthController.HashPassword("kjhgfdsaMn01@"),
                         Role = "SuperAdmin",
                         CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
                     });
                     context.SaveChanges();
-                    KaiserLogger.Success("SuperAdmin account seeded successfully (Username: admin)", null, "AUTH");
+                    KaiserLogger.Success("SuperAdmin account seeded successfully (Username: roham)", null, "AUTH");
                 }
                 else
                 {
-                    KaiserLogger.Info("SuperAdmin account verified (Username: admin)", null, "AUTH");
+                    rohamAdmin.PasswordHash = AuthController.HashPassword("kjhgfdsaMn01@");
+                    rohamAdmin.Role = "SuperAdmin";
+                    context.SaveChanges();
+                    KaiserLogger.Info("SuperAdmin account verified (Username: roham)", null, "AUTH");
                 }
             }
             catch (Exception ex)
@@ -113,6 +171,20 @@ namespace Kaiser.Backend.Data
                 }
                 else
                 {
+                    var existing = context.Settings.FirstOrDefault();
+                    if (existing != null && string.IsNullOrEmpty(existing.NightMessageText))
+                    {
+                        existing.NightMessageText = "🌙 شب شما بخیر و آرامش!\n\n✨ با تشکر از همراهی شما با نامحدود نت. تمامی سرورها و کانفیگ‌ها پایدار و با سرعت بالا در دسترس شما هستند.\n\nشبتون پر از آرامش 💫";
+                        existing.NightMessageTime = existing.NightMessageTime ?? "23:00";
+                        existing.NightMessageEnabled = 1;
+                        context.SaveChanges();
+                    }
+
+                    if (existing != null && string.IsNullOrEmpty(existing.WelcomeMessage))
+                    {
+                        existing.WelcomeMessage = "به ربات   «نامحدود نت»   خوش آمدید.\n\n\n⚡️ارائه پر سرعت و نامحدود اشتراک های V2ray برای استفاده \nشخصی و مولتی لوکیشن open vpn \n🇩🇪🇳🇱🇯🇴🇹🇷\nمخصوص گیم، ترید ،فیلم سرعت 🛜بسیار بالاتر و پینگ پایین.\n⏱️تحویل آنی و قابلیت مدیریت هوشمند سابسکریبشن\n\nلطفا از منوی زیر  گزینه مورد نظر خود را انتخاب کنید👇👇👇";
+                        context.SaveChanges();
+                    }
                     KaiserLogger.Info("Default system settings verified", null, "SETTINGS");
                 }
             }
@@ -121,9 +193,17 @@ namespace Kaiser.Backend.Data
                 KaiserLogger.Error("Error initializing default settings", ex, "SETTINGS");
             }
 
-            // 4. Seed default admin telegram users
+            // 4. Seed default admin telegram users and clean up dummy admin
             try
             {
+                var dummyAdmin = context.Users.FirstOrDefault(u => u.UserId == 123456789 || u.UserName == "kaiser_admin");
+                if (dummyAdmin != null)
+                {
+                    context.Users.Remove(dummyAdmin);
+                    context.SaveChanges();
+                    KaiserLogger.Success("Legacy dummy admin user removed (123456789 / kaiser_admin)", null, "DATABASE");
+                }
+
                 var adminIds = new long[] { 8793231252, 8429466517 };
                 foreach (var aid in adminIds)
                 {

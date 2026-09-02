@@ -36,7 +36,7 @@ import * as QRCode from 'qrcode';
               <td><span class="badge badge-info">{{ s.typeService }}</span></td>
               <td>
                 <div style="font-size: 11.5px; margin-bottom: 4px;">
-                  {{ ((s.upload + s.download) / 1073741824).toFixed(1) }} GB / {{ (s.totalUsed / 1073741824).toFixed(0) }} GB
+                  {{ ((s.upload + s.download) / 1073741824).toFixed(1) }} GB / {{ s.totalUsed > 0 ? (s.totalUsed / 1073741824).toFixed(0) + ' GB' : 'نامحدود' }}
                 </div>
                 <div style="background: rgba(255,255,255,0.08); height: 6px; border-radius: 3px; width: 120px; overflow: hidden;">
                   <div style="background: linear-gradient(90deg, #6366f1, #06b6d4); height: 100%; border-radius: 3px;"

@@ -7,6 +7,7 @@ import { apiClient } from './services/apiClient.js';
 import { keyboards } from './handlers/keyboards.js';
 import { userHandler } from './handlers/userHandler.js';
 import { adminHandler } from './handlers/adminHandler.js';
+import { nightMessageService } from './services/nightMessageService.js';
 
 const bot = new Telegraf(config.botToken);
 
@@ -29,6 +30,11 @@ async function checkChannelMembership(ctx, userId) {
 
 // Helper: Send Mandatory Channel Lock Message
 async function sendLockChannelMessage(ctx) {
+  // STRICT: Never ever send lock channel message to channels, groups, or supergroups
+  if (!ctx.chat || ctx.chat.type !== 'private') {
+    return;
+  }
+
   const text = `⚠️ **کاربر گرامی، برای استفاده از امکانات ربات عضویت در کانال زیر الزامی است:**
 
 📢 **کانال اطلاع‌رسانی:** ${config.requiredChannel}
@@ -58,7 +64,7 @@ async function sendLockChannelMessage(ctx) {
 
 // Global Telegraf Error Handler
 bot.catch((err, ctx) => {
-  logger.error(`Error handling update ${ctx.update.update_id}`, err, 'TELEGRAM_ERROR', {
+  logger.error(`Error handling update ${ctx.update?.update_id}`, err, 'TELEGRAM_ERROR', {
     update_type: ctx.updateType,
     from: ctx.from
   });
@@ -66,7 +72,13 @@ bot.catch((err, ctx) => {
 
 // Global Middleware
 bot.use(async (ctx, next) => {
-  if (!ctx.from) return next();
+  // STRICT: Only process private (DM) chats with users.
+  // Completely ignore channels, supergroups, and groups so the bot NEVER posts in the channel.
+  if (!ctx.chat || ctx.chat.type !== 'private') {
+    return;
+  }
+
+  if (!ctx.from) return;
 
   // Log incoming interaction
   if (ctx.message?.text) {
@@ -460,7 +472,7 @@ async function startBot() {
 
           await bot.telegram.setWebhook(webhookEndpoint, {
             drop_pending_updates: true,
-            allowed_updates: ['message', 'callback_query', 'channel_post', 'chat_member']
+            allowed_updates: ['message', 'callback_query']
           });
 
           const webhookInfo = await bot.telegram.getWebhookInfo();
@@ -489,6 +501,9 @@ async function startBot() {
     bot.launch();
     logger.info('Kaiser Bot running in Long-Polling mode...', null, 'POLLING');
   }
+
+  // Start automated Good Night message scheduler (Asia/Tehran)
+  nightMessageService.start(bot);
 }
 
 // Global Process Error Handlers
@@ -505,10 +520,12 @@ startBot().catch(err => logger.error('Fatal error starting Kaiser Bot', err, 'FA
 // Graceful stop
 process.once('SIGINT', () => {
   logger.info('Stopping Kaiser Bot (SIGINT)...', null, 'SHUTDOWN');
+  nightMessageService.stop();
   bot.stop('SIGINT');
 });
 
 process.once('SIGTERM', () => {
   logger.info('Stopping Kaiser Bot (SIGTERM)...', null, 'SHUTDOWN');
+  nightMessageService.stop();
   bot.stop('SIGTERM');
 });

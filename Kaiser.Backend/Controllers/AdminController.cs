@@ -13,12 +13,21 @@ namespace Kaiser.Backend.Controllers
         private readonly AppDbContext _db;
         private readonly IXuiService _xuiService;
         private readonly ISubscriptionService _subscriptionService;
+        private readonly IConfiguration _config;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public AdminController(AppDbContext db, IXuiService xuiService, ISubscriptionService subscriptionService)
+        public AdminController(
+            AppDbContext db,
+            IXuiService xuiService,
+            ISubscriptionService subscriptionService,
+            IConfiguration config,
+            IHttpClientFactory httpClientFactory)
         {
             _db = db;
             _xuiService = xuiService;
             _subscriptionService = subscriptionService;
+            _config = config;
+            _httpClientFactory = httpClientFactory;
         }
 
         [HttpGet("dashboard")]
@@ -221,13 +230,25 @@ namespace Kaiser.Backend.Controllers
         public async Task<IActionResult> CreatePlan([FromBody] CreatePlanRequest req)
         {
             long gb = 1024L * 1024L * 1024L;
+            long volumeBytes = 0;
+            if (req.VolumeGB != null)
+            {
+                string volStr = req.VolumeGB.ToString()?.Trim() ?? "";
+                if (!volStr.Contains("نامحدود", StringComparison.OrdinalIgnoreCase) &&
+                    !volStr.Equals("unlimited", StringComparison.OrdinalIgnoreCase) &&
+                    long.TryParse(volStr, out long parsedGB) && parsedGB > 0)
+                {
+                    volumeBytes = parsedGB * gb;
+                }
+            }
+
             var plan = new ServerPlan
             {
                 PlanName = req.PlanName,
                 Description = req.Description,
                 MonthCount = req.MonthCount,
                 Price = req.Price,
-                Volume = req.VolumeGB * gb,
+                Volume = volumeBytes,
                 CatId = req.CatId,
                 UserLimit = req.UserLimit,
                 SpeedLimit = req.SpeedLimit
@@ -283,6 +304,20 @@ namespace Kaiser.Backend.Controllers
             user.Wallet += req.Amount;
             await _db.SaveChangesAsync();
             return Ok(user);
+        }
+
+        [HttpDelete("users/{id}")]
+        public async Task<IActionResult> DeleteUser(long id)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null)
+            {
+                user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == id);
+            }
+            if (user == null) return NotFound();
+            _db.Users.Remove(user);
+            await _db.SaveChangesAsync();
+            return Ok(new { success = true });
         }
 
         // --- ORDERS ---
@@ -366,6 +401,97 @@ namespace Kaiser.Backend.Controllers
             }
             await _db.SaveChangesAsync();
             return Ok(updated);
+        }
+
+        // --- BROADCAST / DIRECT MESSAGING ---
+        [HttpPost("broadcast")]
+        public async Task<IActionResult> Broadcast([FromBody] BroadcastRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Message))
+            {
+                return BadRequest(new BroadcastResult { Success = false, Message = "متن پیام نمی‌تواند خالی باشد." });
+            }
+
+            var botToken = _config["KaiserConfig:BotToken"] ?? Environment.GetEnvironmentVariable("KaiserConfig__BotToken");
+            if (string.IsNullOrEmpty(botToken))
+            {
+                return BadRequest(new BroadcastResult { Success = false, Message = "توکن ربات تلگرام در تنظیمات سرور یافت نشد." });
+            }
+
+            List<long> targetUserIds;
+            if (req.SendToAll || req.TargetUserIds == null || req.TargetUserIds.Count == 0)
+            {
+                targetUserIds = await _db.Users
+                    .Where(u => u.UserId > 10000)
+                    .Select(u => u.UserId)
+                    .Distinct()
+                    .ToListAsync();
+            }
+            else
+            {
+                targetUserIds = req.TargetUserIds.Where(id => id > 10000).Distinct().ToList();
+            }
+
+            if (targetUserIds.Count == 0)
+            {
+                return Ok(new BroadcastResult
+                {
+                    Success = false,
+                    TotalTargets = 0,
+                    SuccessCount = 0,
+                    FailCount = 0,
+                    Message = "هیچ کاربری برای ارسال پیام یافت نشد."
+                });
+            }
+
+            var client = _httpClientFactory.CreateClient();
+            int successCount = 0;
+            int failCount = 0;
+
+            foreach (var userId in targetUserIds)
+            {
+                try
+                {
+                    var payload = new
+                    {
+                        chat_id = userId,
+                        text = req.Message,
+                        parse_mode = "Markdown"
+                    };
+                    var jsonContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(payload), System.Text.Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync($"https://api.telegram.org/bot{botToken}/sendMessage", jsonContent);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        successCount++;
+                    }
+                    else
+                    {
+                        // Fallback without parse_mode in case markdown has syntax error
+                        var fallbackPayload = new { chat_id = userId, text = req.Message };
+                        var fbContent = new StringContent(System.Text.Json.JsonSerializer.Serialize(fallbackPayload), System.Text.Encoding.UTF8, "application/json");
+                        var fbResp = await client.PostAsync($"https://api.telegram.org/bot{botToken}/sendMessage", fbContent);
+                        if (fbResp.IsSuccessStatusCode) successCount++;
+                        else failCount++;
+                    }
+                }
+                catch
+                {
+                    failCount++;
+                }
+
+                // 35ms delay to stay within Telegram rate limits (~28 msgs/sec)
+                await Task.Delay(35);
+            }
+
+            return Ok(new BroadcastResult
+            {
+                Success = true,
+                TotalTargets = targetUserIds.Count,
+                SuccessCount = successCount,
+                FailCount = failCount,
+                Message = $"ارسال پیام به پایان رسید. {successCount} موفق، {failCount} ناموفق."
+            });
         }
     }
 }
